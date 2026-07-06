@@ -1,0 +1,548 @@
+/* ==================== UNICA CRM - CUSTOM STYLES ==================== */
+
+/* -------------------- VARIABILI COLORI BRAND -------------------- */
+:root {
+  --unica-blu: #2563eb;
+  --unica-blu-scuro: #1e40af;
+  --unica-blu-chiaro: #3b82f6;
+  --unica-arancio: #fb923c;
+  --unica-arancio-scuro: #ea580c;
+  --unica-arancio-chiaro: #fed7aa;
+  --bg-principale: #ffffff;
+  --bg-secondario: #f8fafc;
+  --testo-principale: #1e293b;
+  --testo-secondario: #64748b;
+  --bordo: #e2e8f0;
+  --ombra-leggera: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --ombra-media: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --ombra-forte: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* -------------------- RESET E BASE -------------------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-principale);
+  color: var(--testo-principale);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* -------------------- TIPOGRAFIA -------------------- */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--testo-principale);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+
+/* -------------------- LOGIN PAGE -------------------- */
+.min-h-screen.flex.items-center.justify-center {
+  background: linear-gradient(135deg, var(--unica-blu) 0%, var(--unica-blu-scuro) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.min-h-screen.flex.items-center.justify-center::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--unica-arancio) 0%, transparent 70%);
+  opacity: 0.1;
+  animation: rotate 30s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.bg-white.p-8.rounded-lg.shadow-2xl {
+  background: var(--bg-principale);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 1;
+}
+
+.bg-white.p-8.rounded-lg.shadow-2xl h2 {
+  background: linear-gradient(135deg, var(--unica-blu), var(--unica-blu-scuro));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* -------------------- SIDEBAR -------------------- */
+.bg-gray-800 {
+  background: linear-gradient(180deg, var(--unica-blu-scuro) 0%, var(--unica-blu) 100%);
+  box-shadow: var(--ombra-media);
+}
+
+.bg-gray-800 h1 {
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bg-gray-800 nav a {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  margin: 4px 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.bg-gray-800 nav a:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+  color: white;
+}
+
+.bg-gray-800 nav a.bg-gray-700 {
+  background: rgba(255, 255, 255, 0.15);
+  border-left-color: var(--unica-arancio);
+  color: white;
+}
+
+/* -------------------- HEADER -------------------- */
+header.bg-white {
+  background: var(--bg-principale);
+  border-bottom: 2px solid var(--bordo);
+  box-shadow: var(--ombra-leggera);
+}
+
+/* -------------------- CARDS -------------------- */
+.bg-white.rounded-lg.shadow {
+  background: var(--bg-principale);
+  border-radius: 12px;
+  box-shadow: var(--ombra-leggera);
+  border: 1px solid var(--bordo);
+  transition: all 0.3s ease;
+}
+
+.bg-white.rounded-lg.shadow:hover {
+  box-shadow: var(--ombra-media);
+  transform: translateY(-2px);
+}
+
+/* Dashboard Stats Cards */
+.bg-white.rounded-lg.shadow.p-6 .flex-shrink-0 {
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--unica-blu) 0%, var(--unica-blu-chiaro) 100%);
+}
+
+.bg-white.rounded-lg.shadow.p-6 .flex-shrink-0.bg-green-500 {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.bg-white.rounded-lg.shadow.p-6 .flex-shrink-0.bg-purple-500 {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.bg-white.rounded-lg.shadow.p-6 .flex-shrink-0.bg-orange-500 {
+  background: linear-gradient(135deg, var(--unica-arancio) 0%, var(--unica-arancio-chiaro) 100%);
+}
+
+/* -------------------- BUTTONS -------------------- */
+button, .bg-blue-500, [class*="bg-blue-"] {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: var(--ombra-leggera);
+}
+
+.bg-blue-500 {
+  background: linear-gradient(135deg, var(--unica-blu) 0%, var(--unica-blu-chiaro) 100%);
+  border: 1px solid var(--unica-blu);
+}
+
+.bg-blue-500:hover {
+  background: linear-gradient(135deg, var(--unica-blu-scuro) 0%, var(--unica-blu) 100%);
+  box-shadow: var(--ombra-media);
+  transform: translateY(-2px);
+}
+
+.bg-green-500 {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.bg-red-500, .bg-red-600 {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+}
+
+.bg-yellow-500 {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.bg-purple-500 {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+/* Button secondario (bordo) */
+button[class*="border"] {
+  background: var(--bg-principale);
+  border: 2px solid var(--bordo);
+  color: var(--testo-secondario);
+}
+
+button[class*="border"]:hover {
+  background: var(--bg-secondario);
+  border-color: var(--unica-blu);
+  color: var(--unica-blu);
+}
+
+/* -------------------- FORMS -------------------- */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="password"],
+textarea,
+select {
+  border: 2px solid var(--bordo);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  background: var(--bg-principale);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--unica-blu);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Checkbox personalizzato */
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--bordo);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--unica-blu);
+  border-color: var(--unica-blu);
+}
+
+/* -------------------- TABLES -------------------- */
+table {
+  background: var(--bg-principale);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+thead {
+  background: var(--bg-secondario);
+  border-bottom: 2px solid var(--bordo);
+}
+
+thead th {
+  color: var(--testo-secondario);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--bordo);
+  transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+  background: var(--bg-secondario);
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* -------------------- BADGES/TAGS -------------------- */
+.bg-green-100 {
+  background: rgba(16, 185, 129, 0.1);
+  color: #047857;
+}
+
+.bg-blue-100 {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--unica-blu-scuro);
+}
+
+.bg-yellow-100 {
+  background: rgba(245, 158, 11, 0.1);
+  color: #92400e;
+}
+
+.bg-red-100 {
+  background: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+}
+
+.bg-gray-100 {
+  background: var(--bg-secondario);
+  color: var(--testo-secondario);
+}
+
+.bg-purple-100 {
+  background: rgba(139, 92, 246, 0.1);
+  color: #5b21b6;
+}
+
+/* Badge arancio per elementi speciali UNICA */
+.bg-orange-100 {
+  background: rgba(251, 146, 60, 0.1);
+  color: var(--unica-arancio-scuro);
+}
+
+/* -------------------- CALENDARIO AGENDA -------------------- */
+.grid.grid-cols-7 {
+  background: var(--bg-principale);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--bordo);
+}
+
+.grid.grid-cols-7 > div {
+  border-right: 1px solid var(--bordo);
+  border-bottom: 1px solid var(--bordo);
+  min-height: 100px;
+  transition: all 0.2s ease;
+}
+
+.grid.grid-cols-7 > div:hover {
+  background: var(--bg-secondario);
+}
+
+.grid.grid-cols-7 > div.bg-blue-50 {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.1) 100%);
+}
+
+/* -------------------- MODAL -------------------- */
+.fixed.inset-0.bg-black {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.fixed.inset-0 .bg-white {
+  background: var(--bg-principale);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* -------------------- PROMEMORIA/ALERT -------------------- */
+.bg-yellow-50 {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.05) 0%, rgba(251, 146, 60, 0.1) 100%);
+  border-left-color: var(--unica-arancio);
+}
+
+/* -------------------- ANIMAZIONI -------------------- */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fa, .fas, .far {
+  transition: all 0.3s ease;
+}
+
+button:hover .fa,
+button:hover .fas,
+button:hover .far {
+  transform: scale(1.1);
+}
+
+/* -------------------- SCROLLBAR PERSONALIZZATA -------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondario);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--unica-blu);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--unica-blu-scuro);
+}
+
+/* -------------------- NOTIFICHE -------------------- */
+.fixed.top-4.right-4 {
+  animation: slideIn 0.3s ease-out;
+  border-radius: 12px;
+  box-shadow: var(--ombra-forte);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* -------------------- LOADING SCREEN -------------------- */
+#loading {
+  background: var(--bg-principale);
+}
+
+#loading .animate-spin {
+  border-color: var(--bordo);
+  border-bottom-color: var(--unica-blu);
+}
+
+/* -------------------- RESPONSIVE -------------------- */
+@media (max-width: 768px) {
+  .bg-gray-800 {
+    position: fixed;
+    left: -100%;
+    transition: left 0.3s ease;
+    z-index: 50;
+  }
+  
+  .bg-gray-800.active {
+    left: 0;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+}
+
+/* -------------------- PRINT -------------------- */
+@media print {
+  .bg-gray-800, header, button {
+    display: none;
+  }
+  
+  body {
+    background: white;
+    color: black;
+  }
+}
+
+/* -------------------- EFFETTI HOVER SPECIALI -------------------- */
+.hover\:shadow-lg:hover {
+  box-shadow: var(--ombra-forte);
+  transform: translateY(-4px);
+}
+
+/* Card con effetto glow UNICA */
+.bg-white.rounded-lg.shadow:hover::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--unica-blu), var(--unica-arancio));
+  border-radius: 12px;
+  opacity: 0.1;
+  z-index: -1;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { opacity: 0.1; }
+  to { opacity: 0.2; }
+}
+
+/* -------------------- DASHBOARD CHARTS -------------------- */
+canvas {
+  border-radius: 8px;
+  padding: 8px;
+}
+
+/* -------------------- GESTIONE ORDINI - PRODOTTI -------------------- */
+.border.rounded.p-3.bg-blue-50 {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border: 2px solid var(--unica-blu);
+  position: relative;
+  overflow: hidden;
+}
+
+.border.rounded.p-3.bg-blue-50::before {
+  content: '✓';
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  color: var(--unica-blu);
+  font-size: 1.5rem;
+  font-weight: bold;
+  opacity: 0.3;
+}
+
+/* -------------------- MONTAGGI CALENDAR -------------------- */
+.border.rounded-lg.p-4.hover\:shadow-lg {
+  background: var(--bg-principale);
+  border: 2px solid var(--bordo);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.border.rounded-lg.p-4.hover\:shadow-lg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--unica-arancio);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.border.rounded-lg.p-4.hover\:shadow-lg:hover::before {
+  transform: scaleY(1);
+}
+
+/* -------------------- ICONE PERSONALIZZATE -------------------- */
+.fas.fa-users { color: var(--unica-blu); }
+.fas.fa-calendar-alt { color: var(--unica-blu); }
+.fas.fa-shopping-cart { color: var(--unica-arancio); }
+.fas.fa-tools { color: var(--unica-arancio); }
+.fas.fa-chart-line { color: #10b981; }
+.fas.fa-box { color: #8b5cf6; }
+.fas.fa-euro-sign { color: #10b981; }
+.fas.fa-bell { color: var(--unica-arancio); }
+
+/* -------------------- FOOTER (se aggiunto) -------------------- */
+footer {
+  background: var(--bg-secondario);
+  border-top: 2px solid var(--bordo);
+  color: var(--testo-secondario);
+  padding: 2rem 0;
+  text-align: center;
+}
