@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNICA CRM | Demo</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#17243b;background:#f4f7fc}*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}a{color:inherit}.layout{display:grid;grid-template-columns:245px minmax(0,1fr);min-height:100vh}.sidebar{background:#111d36;color:#d8e4ff;padding:25px 15px}.brand{display:flex;gap:10px;align-items:center;font-size:21px;font-weight:800;color:#fff;padding:9px 12px 26px}.logo{display:grid;place-items:center;width:35px;height:35px;background:linear-gradient(140deg,#4f9aff,#3151cf);border-radius:11px}.section{font-size:10px;letter-spacing:1.8px;color:#8293b8;margin:20px 15px 10px}.nav{border:0;text-align:left;background:transparent;color:inherit;padding:13px 15px;margin:3px 0;width:100%;border-radius:10px}.nav:hover,.nav.active{background:#263858;color:#fff}.sidebar-foot{border-top:1px solid #30405d;padding:18px 9px;margin-top:35px;font-size:12px;color:#a7b9d8}.main{min-width:0}.top{padding:19px 32px;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e5ebf4;gap:10px}.title{font-size:22px;font-weight:750}.sub{color:#728199;font-size:13px}.avatar{background:#dce9ff;border-radius:100%;padding:11px;color:#2857a6;font-weight:750}.content{padding:29px 32px;max-width:1500px;margin:auto}.notice{border:1px solid #c5dcff;background:#ecf5ff;color:#315b9d;border-radius:12px;padding:13px 16px;margin-bottom:24px;font-size:13px}.actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.btn{background:#245ed8;color:#fff;border:0;border-radius:10px;padding:11px 17px;font-weight:650}.btn.alt{background:#fff;color:#36547e;border:1px solid #dbe4f0}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:23px}.stat,.panel{background:white;border:1px solid #e5eaf3;border-radius:15px;box-shadow:0 3px 16px #233c6d09}.stat{padding:22px}.stat label{font-size:13px;color:#6d7b92}.stat b{display:block;font-size:28px;margin:9px 0}.stat small{font-size:12px;color:#278267}.two{display:grid;grid-template-columns:1.3fr 1fr;gap:19px}.panel{overflow:hidden;margin-bottom:20px}.panel h2{font-size:16px;margin:0;padding:19px 21px;border-bottom:1px solid #edf0f6}.pad{padding:18px 21px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8290a4;background:#f9fbff}td,th{padding:14px 18px;border-bottom:1px solid #eef1f6;font-size:13px}td{color:#34415b}.pill{border-radius:99px;padding:5px 9px;background:#eaf1ff;color:#315fad;font-size:11px;font-weight:700}.pill.green{background:#e6f7ed;color:#237c52}.pill.orange{background:#fff3dd;color:#a46a1e}.pill.gray{background:#edf1f5;color:#617086}.search{padding:11px 14px;border:1px solid #d8e0ec;background:#fff;border-radius:9px;min-width:240px}.chart{height:195px;display:flex;gap:15px;align-items:end;justify-content:space-around;padding:16px 10px 0}.barwrap{text-align:center;flex:1;color:#8490a4;font-size:11px}.bar{background:linear-gradient(#6397fb,#2f63d9);border-radius:8px 8px 3px 3px;margin-bottom:10px;min-height:12px}.item{padding:13px 0;border-bottom:1px solid #ecf0f6;display:flex;gap:14px;align-items:center}.date{width:50px;color:#245ed8;font-weight:750;font-size:12px}.item strong{font-size:13px}.item small{display:block;color:#77869c;margin-top:4px}.empty{padding:45px;text-align:center;color:#7a879b}.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.offer{padding:19px}.offer p{color:#768499;font-size:13px}.footer{margin-top:23px;color:#8792a5;font-size:12px}.mobile-menu{display:none}@media(max-width:950px){.stats{grid-template-columns:repeat(2,1fr)}.two,.cols{grid-template-columns:1fr}}@media(max-width:670px){.layout{grid-template-columns:1fr}.sidebar{padding:10px;display:flex;align-items:center;overflow:auto;gap:5px}.brand{padding:9px;white-space:nowrap;font-size:15px}.logo{width:26px;height:26px}.section,.sidebar-foot{display:none}.nav{width:auto;white-space:nowrap;padding:9px}.top{padding:15px}.content{padding:16px}.stats{gap:9px}.stat{padding:13px}.stat b{font-size:21px}.search{min-width:0;max-width:100%}}
+</style></head><body><div class="layout">
+<aside class="sidebar"><div class="brand"><span class="logo">U</span> UNICA CRM</div><div class="section">PANORAMICA</div>
+<button class="nav active" data-view="dashboard">◫ &nbsp; Dashboard</button><button class="nav" data-view="clienti">♙ &nbsp; Clienti</button><button class="nav" data-view="agenda">▦ &nbsp; Agenda</button><button class="nav" data-view="preventivi">▤ &nbsp; Preventivi</button><button class="nav" data-view="vendite">▥ &nbsp; Vendite</button>
+<div class="sidebar-foot">● Demo offline dai sistemi aziendali<br>© UNICA CRM · Prototipo</div></aside>
+<div class="main"><header class="top"><div><div class="title" id="title">Dashboard</div><div class="sub">Gestione commerciale, in un unico posto</div></div><div style="display:flex;align-items:center;gap:10px"><span class="sub">Presentazione</span><span class="avatar">DE</span></div></header>
+<main class="content"><div class="notice">🔒 <strong>AMBIENTE DIMOSTRATIVO</strong> — Tutti i nomi, le aziende, i numeri e le attività sono fittizi. Nessun collegamento a database aziendali. Le modifiche effettuate qui rimangono soltanto in questa pagina.</div>
+<div id="view"></div><p class="footer">UNICA CRM · Versione dimostrativa indipendente · Nessun dato reale</p></main></div></div>
+<script>
+(function(){
+'use strict';
+const clienti=[
+{id:1,nome:'Mario Rossi',azienda:'Casa Rossi',citta:'Bologna',stato:'Nuovo contatto',valore:5200},
+{id:2,nome:'Laura Bianchi',azienda:'Residenza Bianchi',citta:'Modena',stato:'Preventivo',valore:8400},
+{id:3,nome:'Andrea Verdi',azienda:'Studio Verdi',citta:'Ferrara',stato:'Trattativa',valore:12900},
+{id:4,nome:'Sofia Ricci',azienda:'Villa Ricci',citta:'Parma',stato:'Cliente',valore:6750},
+{id:5,nome:'Marco Conti',azienda:'Condominio Aurora',citta:'Reggio Emilia',stato:'Sopralluogo',valore:11000},
+{id:6,nome:'Elena Moretti',azienda:'Casa Moretti',citta:'Imola',stato:'Cliente',valore:3450}
+];
+const agenda=[
+{giorno:'11 NOV',ora:'09:30',nome:'Sopralluogo · Casa Rossi',note:'Bologna · Rilievo infissi'},
+{giorno:'11 NOV',ora:'15:00',nome:'Incontro · Studio Verdi',note:'Ferrara · Presentazione proposta'},
+{giorno:'12 NOV',ora:'10:00',nome:'Richiamo · Laura Bianchi',note:'Modena · Follow-up preventivo'},
+{giorno:'13 NOV',ora:'14:30',nome:'Installazione · Villa Ricci',note:'Parma · Verifica conclusiva'}
+];
+const preventivi=[
+{numero:'PREV-2026-001',cliente:'Laura Bianchi',oggetto:'Infissi PVC',importo:8400,stato:'Inviato'},
+{numero:'PREV-2026-002',cliente:'Andrea Verdi',oggetto:'Vetrate scorrevoli',importo:12900,stato:'In trattativa'},
+{numero:'PREV-2026-003',cliente:'Marco Conti',oggetto:'Tapparelle e zanzariere',importo:11000,stato:'Bozza'}
+];
+const vendite=[
+{numero:'VEN-2026-021',cliente:'Sofia Ricci',prodotto:'Infissi alluminio',importo:6750,stato:'Confermata'},
+{numero:'VEN-2026-022',cliente:'Elena Moretti',prodotto:'Zanzariere',importo:3450,stato:'Completata'}
+];
+const money=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const badge=s=>'<span class="pill '+(/Cliente|Confermata|Completata/.test(s)?'green':/Trattativa|In trattativa|Sopralluogo/.test(s)?'orange':/Bozza/.test(s)?'gray':'')+'">'+esc(s)+'</span>';
+const t=(headers,rows)=>'<div class="table-wrap"><table><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
+const tr=c=>'<tr>'+c.map(x=>'<td>'+x+'</td>').join('')+'</tr>';
+const panel=(title,content)=>'<section class="panel"><h2>'+title+'</h2>'+content+'</section>';
+const nav=['dashboard','clienti','agenda','preventivi','vendite'];
+let current='dashboard', filter='';
+const view=document.getElementById('view');
+function draw(){
+document.getElementById('title').textContent=({dashboard:'Dashboard',clienti:'Anagrafica clienti',agenda:'Agenda appuntamenti',preventivi:'Preventivi',vendite:'Vendite e ordini'})[current];
+document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===current));
+if(current==='dashboard'){
+const metrics=[['Clienti gestiti',clienti.length,'Anagrafica demo'],['Appuntamenti',agenda.length,'Agenda demo'],['Preventivi aperti',preventivi.length,money(preventivi.reduce((a,b)=>a+b.importo,0))],['Vendite concluse',vendite.length,money(vendite.reduce((a,b)=>a+b.importo,0))]];
+view.innerHTML='<div class="actions"><div><h2 style="margin:0 0 5px">Panoramica commerciale</h2><span class="sub">Dati sintetici e inventati per la presentazione</span></div><button class="btn" id="go-clients">Esplora i clienti →</button></div><div class="stats">'+metrics.map(m=>'<article class="stat"><label>'+m[0]+'</label><b>'+m[1]+'</b><small>'+m[2]+'</small></article>').join('')+'</div><div class="two">'+panel('Andamento opportunità · simulazione','<div class="chart">'+[35,50,44,71,59,85].map((n,i)=>'<div class="barwrap"><div class="bar" style="height:'+n+'%"></div>'+['Giu','Lug','Ago','Set','Ott','Nov'][i]+'</div>').join('')+'</div>')+panel('Prossimi appuntamenti','<div class="pad">'+agenda.slice(0,3).map(a=>'<div class="item"><div class="date">'+a.giorno+'</div><div><strong>'+a.nome+'</strong><small>'+a.ora+' · '+a.note+'</small></div></div>').join('')+'</div>')+'</div>'+panel('Ultimi clienti',t(['Cliente','Azienda','Città','Stato'],clienti.slice(0,4).map(c=>tr([esc(c.nome),esc(c.azienda),esc(c.citta),badge(c.stato)]))));
+document.getElementById('go-clients').onclick=()=>setView('clienti');
+}else if(current==='clienti'){
+const filtered=clienti.filter(c=>(c.nome+' '+c.azienda+' '+c.citta+' '+c.stato).toLowerCase().includes(filter.toLowerCase()));
+view.innerHTML='<div class="actions"><div><strong>'+clienti.length+' clienti di esempio</strong><div class="sub">Ricerca interattiva con dati inventati</div></div><input class="search" id="search" placeholder="Cerca nome, città, azienda..." aria-label="Cerca clienti" value="'+esc(filter)+'"></div>'+panel('Elenco clienti',t(['Cliente','Azienda','Città','Stato','Opportunità'],filtered.map(c=>tr([esc(c.nome),esc(c.azienda),esc(c.citta),badge(c.stato),money(c.valore)]))));
+const el=document.getElementById('search');el.oninput=e=>{filter=e.target.value;draw();const n=document.getElementById('search');n.focus();n.setSelectionRange(n.value.length,n.value.length)};
+}else if(current==='agenda'){
+view.innerHTML='<div class="actions"><strong>Appuntamenti in programma</strong><span class="sub">Agenda dimostrativa · novembre 2026</span></div>'+panel('Agenda commerciale','<div class="pad">'+agenda.map(a=>'<div class="item"><div class="date">'+a.giorno+'</div><div><strong>'+a.nome+'</strong><small>'+a.ora+' · '+a.note+'</small></div></div>').join('')+'</div>');
+}else if(current==='preventivi'){
+view.innerHTML='<div class="actions"><strong>Gestione preventivi</strong><span class="sub">Stati e importi di esempio</span></div>'+panel('Preventivi recenti',t(['Numero','Cliente','Lavorazione','Importo','Stato'],preventivi.map(p=>tr([esc(p.numero),esc(p.cliente),esc(p.oggetto),money(p.importo),badge(p.stato)]))));
+}else if(current==='vendite'){
+view.innerHTML='<div class="actions"><strong>Vendite e ordini</strong><span class="sub">Valori illustrativi, non risultati aziendali reali</span></div>'+panel('Vendite recenti',t(['Numero','Cliente','Prodotto','Importo','Stato'],vendite.map(v=>tr([esc(v.numero),esc(v.cliente),esc(v.prodotto),money(v.importo),badge(v.stato)]))));
+}
+}
+function setView(n){if(!nav.includes(n))return;current=n;filter='';draw();window.scrollTo(0,0)}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));
+draw();
+})();
+</script></body></html>
