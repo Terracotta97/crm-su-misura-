@@ -1,25 +1,7 @@
-# wrangler.toml
-name = "unica-crm"
-main = "src/index.tsx"
-compatibility_date = "2025-10-01"
-compatibility_flags = ["nodejs_compat"]
-
+# Demo indipendente: nessuna connessione ai database o bucket dell'ex azienda.
+name = "crm-demo-personale"
+compatibility_date = "2026-11-10"
 workers_dev = true
 
-assets = { directory = "./public", binding = "ASSETS" }
-
-# Variabili di ambiente
-[vars]
-ENVIRONMENT = "production"
-
-# D1 Database
-[[d1_databases]]
-binding = "DB"
-database_name = "crm-preview"
-database_id = "458e4ab2-cbc6-4b76-8510-f6a49cf816f8"
-preview_database_id = "458e4ab2-cbc6-4b76-8510-f6a49cf816f8"
-
-# R2 Bucket per allegati rilievi (fino a 5GB)
-[[r2_buckets]]
-binding = "R2"
-bucket_name = "webapp-rilievi"
+[assets]
+directory = "./public"
