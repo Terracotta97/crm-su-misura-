@@ -46,6 +46,10 @@ jobs:
           echo "HTTP login code: $HTTP_CODE"
           if [[ "$HTTP_CODE" != "200" ]] || ! grep -q '"success":true' /tmp/unica-login.json; then
             echo "Local CRM login smoke test failed"
-            tail -n 60 /tmp/unica-worker.log | sed 's/test-login-secret-93856/[redacted]/g'
+            echo "Response payload:"
+            cat /tmp/unica-login.json
+            sleep 3
+            echo "Worker logs:"
+            tail -n 100 /tmp/unica-worker.log | sed 's/test-login-secret-93856/[redacted]/g'
             exit 1
           fi
