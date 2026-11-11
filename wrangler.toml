@@ -16,7 +16,7 @@ ENVIRONMENT = "demo"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "crm-demo-personale-db"
+database_name = "crm-prova"
 database_id = "084d5e57-f0ec-4d34-b4a4-cec22840aefd"
 
 [[r2_buckets]]
