@@ -465,18 +465,19 @@ function generateOrderNumber() {
 }
 
 
+// Cloudflare Workers PBKDF2 limita le iterazioni a 100000.
 function toHex(bytes: Uint8Array): string { return Array.from(bytes).map(x=>x.toString(16).padStart(2,'0')).join(''); }
 async function derivePasswordHash(password:string,salt:Uint8Array):Promise<string> {
   const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-  return toHex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:180000},key,256)));
+  return toHex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:100000},key,256)));
 }
 async function secureHashPassword(password:string):Promise<string> {
   const salt=crypto.getRandomValues(new Uint8Array(16));
-  return 'pbkdf2$180000$'+toHex(salt)+'$'+await derivePasswordHash(password,salt);
+  return 'pbkdf2$100000$'+toHex(salt)+'$'+await derivePasswordHash(password,salt);
 }
 async function verifyPasswordStored(stored:string,password:string):Promise<boolean> {
   const parts=(stored||'').split('$');
-  if(parts.length!==4||parts[0]!=='pbkdf2'||parts[1]!=='180000'||!/^[0-9a-f]{32}$/.test(parts[2])||!/^[0-9a-f]{64}$/.test(parts[3]))return false;
+  if(parts.length!==4||parts[0]!=='pbkdf2'||parts[1]!=='100000'||!/^[0-9a-f]{32}$/.test(parts[2])||!/^[0-9a-f]{64}$/.test(parts[3]))return false;
   const salt=Uint8Array.from((parts[2].match(/.{2}/g)||[]).map(x=>parseInt(x,16)));
   const actual=await derivePasswordHash(password,salt);
   let diff=0;
