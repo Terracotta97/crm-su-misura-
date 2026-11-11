@@ -6,7 +6,6 @@ import { serveStatic } from 'hono/cloudflare-workers'
 type Bindings = {
   DB: D1Database;
   R2: R2Bucket;
-  DEMO_ACCESS_PASSWORD: string;
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -19,7 +18,11 @@ async function ensureInit(db: D1Database) {
 }
 
 /* ---------------- CORS ---------------- */
-// Demo privata: non abilitiamo CORS verso altri siti.
+app.use('/api/*', cors({
+  origin: '*',
+  allowHeaders: ['Content-Type', 'Authorization', 'user-id', 'user-role'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+}))
 
 app.use('/api/*', async (c, next) => {
   await next()
@@ -459,44 +462,68 @@ async function initializeDatabase(db: D1Database) {
   await db.prepare("CREATE TABLE IF NOT EXISTS __unica_schema_ready (version INTEGER NOT NULL DEFAULT 1)").run();
 }
 
+// I 27 comandi originali per gli utenti vengono eseguiti una sola volta.
+// Conservano username, password e permessi così come definiti dal CRM originale.
+const originalUserSeedStatements: string[] = [
+  "\n    INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo) VALUES\n    ('admin','admin123','admin','Amministratore','admin@example.com','',1),\n    ('narciso','narciso123','venditore','Narciso','narciso@example.com','',1),\n ('fabio','fabio123','venditore','Fabio','fabio@example.com','',1),\n    ('max','max123','venditore','Max','max@example.com','',1)\n  ",
+  "\n  UPDATE users\n  SET scopes = '[\"agenda\"]'\n  WHERE username IN ('fabio','max')\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES\n    ('paola','paola123','admin','Paola','paola@example.com','',1),\n    ('olga','StordY-26','venditore','Olga','olga@example.com','',1),\n    ('giulia','aron17','venditore','Giulia','giulia@example.com','',1),\n    ('giada','giada123','venditore','Giada','giada@example.com','',1)\n",
+  "\n  UPDATE users SET password = 'aron17' WHERE username = 'giulia'\n",
+  "\n  UPDATE users SET password = 'StordY-26' WHERE username = 'olga'\n",
+  "\n  UPDATE users SET password = 'ciaociao97' WHERE username = 'stefano'\n",
+  "\n  UPDATE users SET password = 'A2006' WHERE username = 'alice'\n",
+  "\n  UPDATE users SET password = 'hogrider67unica' WHERE username = 'adam'\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('sandra','sandra123','venditore','Sandra','sandra@example.com','',1)\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('isam','isam123','venditore','Isam','isam@example.com','',1)\n",
+  "\n  UPDATE users\n  SET scopes = '[\"preventivi\"]'\n  WHERE username = 'isam'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\"]'\n  WHERE username = 'sandra'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"preventivi\"]'\n  WHERE username = 'isam'\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('cosimo','cosimo123','venditore','Cosimo','cosimo@example.com','',1)\n",
+  "\n  UPDATE users\n  SET scopes = '[\"rilievi\"]'\n  WHERE username = 'cosimo'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\",\"orders\",\"montaggi\",\"revenue\",\"agenda_all\"]'\n  WHERE username IN ('admin','paola')\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('stefano','ciaociao97','admin','Stefano','stefano@example.com','',1)\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\",\"orders\",\"montaggi\",\"revenue\",\"agenda_all\",\"presenze\"]'\n  WHERE username = 'stefano'\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('alice','A2006','admin','Alice','alice@example.com','',1)\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\",\"orders\",\"montaggi\",\"revenue\",\"agenda_all\",\"presenze\"]'\n  WHERE username = 'alice'\n",
+  "\n  INSERT OR IGNORE INTO users (username,password,role,nome_completo,email,telefono,attivo)\n  VALUES ('adam','hogrider67unica','venditore','Adam','adam@example.com','',1)\n",
+  "\n  UPDATE users\n  SET scopes = '[\"preventivi\"]'\n  WHERE username = 'adam'\n",
+  "\n  UPDATE users\n  SET scopes = COALESCE(scopes, '[\"customers\",\"agenda\"]')\n  WHERE role = 'venditore'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\",\"agenda_all\"]'\n  WHERE username = 'giulia'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"agenda\",\"agenda_all\",\"orders\",\"montaggi\",\"rilievi\"]'\n  WHERE username = 'olga'\n",
+  "\n  UPDATE users\n  SET scopes = '[\"customers\",\"orders\",\"montaggi\",\"rilievi\",\"preventivi\",\"pratiche_enea\"]'\n  WHERE username = 'giada'\n",
+  "\n  UPDATE users\n  SET scopes = json_insert(COALESCE(scopes, '[]'), '$[#]', 'presenze')\n  WHERE username IN ('admin', 'paola')\n"
+];
+let __ORIGINAL_USERS_READY = false;
+async function ensureOriginalUsers(db: D1Database) {
+  if (__ORIGINAL_USERS_READY) return;
+  const alreadySeeded = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='__unica_original_users_ready'").first();
+  if (!alreadySeeded) {
+    const statements = originalUserSeedStatements.map(sql => db.prepare(sql));
+    // Prima era stato creato un admin demo con hash PBKDF2: riportalo
+    // alla password prevista esclusivamente dal CRM originale.
+    statements.push(db.prepare("UPDATE users SET password='admin123' WHERE username='admin' AND password LIKE 'pbkdf2$%'"));
+    await db.batch(statements);
+    await db.prepare("CREATE TABLE IF NOT EXISTS __unica_original_users_ready (version INTEGER NOT NULL DEFAULT 1)").run();
+  }
+  __ORIGINAL_USERS_READY = true;
+}
+
 function generateOrderNumber() {
   const n = new Date()
   return `ORD${n.getFullYear().toString().slice(-2)}${String(n.getMonth() + 1).padStart(2, '0')}${String(n.getDate()).padStart(2, '0')}${n.getTime().toString().slice(-6)}`
 }
 
-
-// Cloudflare Workers PBKDF2 limita le iterazioni a 100000.
-function toHex(bytes: Uint8Array): string { return Array.from(bytes).map(x=>x.toString(16).padStart(2,'0')).join(''); }
-async function derivePasswordHash(password:string,salt:Uint8Array):Promise<string> {
-  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveBits']);
-  return toHex(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-256',salt,iterations:100000},key,256)));
-}
-async function secureHashPassword(password:string):Promise<string> {
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  return 'pbkdf2$100000$'+toHex(salt)+'$'+await derivePasswordHash(password,salt);
-}
-async function verifyPasswordStored(stored:string,password:string):Promise<boolean> {
-  const parts=(stored||'').split('$');
-  if(parts.length!==4||parts[0]!=='pbkdf2'||parts[1]!=='100000'||!/^[0-9a-f]{32}$/.test(parts[2])||!/^[0-9a-f]{64}$/.test(parts[3]))return false;
-  const salt=Uint8Array.from((parts[2].match(/.{2}/g)||[]).map(x=>parseInt(x,16)));
-  const actual=await derivePasswordHash(password,salt);
-  let diff=0;
-  for(let i=0;i<actual.length;i++)diff|=actual.charCodeAt(i)^parts[3].charCodeAt(i);
-  return diff===0;
-}
-async function validateUser(db:D1Database,u:string,p:string) {
-  const row=await db.prepare(`SELECT id,username,password,role,nome_completo,email,attivo,scopes FROM users
-    WHERE username=? AND attivo=1`).bind(u).first<{password:string;[key:string]:any}>();
-  if(!row||!(await verifyPasswordStored(row.password,p)))return null;
-  return row;
-}
-async function bootstrapDemoAdmin(db:D1Database,secret:string) {
-  const exists=await db.prepare('SELECT id FROM users WHERE username=?').bind('admin').first();
-  if(exists)return;
-  const hashed=await secureHashPassword(secret);
-  const scopes=['customers','agenda','agenda_all','orders','montaggi','revenue','presenze','preventivi','rilievi','pratiche_enea'];
-  await db.prepare(`INSERT OR IGNORE INTO users(username,password,role,nome_completo,email,telefono,attivo,scopes)
-    VALUES('admin',?,'admin','Amministratore demo',NULL,'',1,?)`).bind(hashed,JSON.stringify(scopes)).run();
+async function validateUser(db: D1Database, u: string, p: string) {
+  try {
+  const r = await db.prepare(`
+  SELECT id, username, role, nome_completo, email, attivo, scopes
+  FROM users 
+  WHERE username = ? AND password = ? AND attivo = 1
+`).bind(u, p).first()
+    return r || null
+  } catch {
+    return null
+  }
 }
 
 async function createOrderIfMissing(db: D1Database, saleId: number, customerId: number, prodottiVenduti?: string) {
@@ -737,7 +764,7 @@ app.post('/api/auth/login', async (c) => {
     }
 
     await ensureInit(c.env.DB)
-    await bootstrapDemoAdmin(c.env.DB, c.env.DEMO_ACCESS_PASSWORD)
+    await ensureOriginalUsers(c.env.DB)
     const user = await validateUser(c.env.DB, username, password)
 
     if (!user) {
@@ -6916,7 +6943,7 @@ app.post('/api/presenze/entrata', async (c) => {
     const user = await c.env.DB.prepare(`SELECT password FROM users WHERE id = ?`)
       .bind(uid).first<{ password: string }>();
     
-    if (!user || !(await verifyPasswordStored(user.password,password))) {
+    if (!user || user.password !== password) {
       return c.json({ error: 'Password errata' }, 401);
     }
     
@@ -6961,7 +6988,7 @@ app.post('/api/presenze/uscita', async (c) => {
     const user = await c.env.DB.prepare(`SELECT password FROM users WHERE id = ?`)
       .bind(uid).first<{ password: string }>();
     
-    if (!user || !(await verifyPasswordStored(user.password,password))) {
+    if (!user || user.password !== password) {
       return c.json({ error: 'Password errata' }, 401);
     }
     
@@ -7106,29 +7133,9 @@ const id = Number(c.req.param('id'));
 // GET /api/presenze - Lista presenze (con filtri)
 app.notFound((c) => c.json({ error: 'Endpoint non trovato' }, 404))
 
-// Protezione dell'app completa con un segreto che non compare mai nel codice GitHub.
 export default {
-  async fetch(request:Request,env:Bindings,ctx:ExecutionContext) {
-    if(!env.DEMO_ACCESS_PASSWORD||env.DEMO_ACCESS_PASSWORD.length<14) {
-      return new Response('Configurare il secret DEMO_ACCESS_PASSWORD su Cloudflare',{status:503});
-    }
-    let user='',password='';
-    try {
-      const authorization=request.headers.get('Authorization')||'';
-      if(authorization.startsWith('Basic ')) {
-        const decoded=atob(authorization.slice(6));
-        const pos=decoded.indexOf(':');
-        if(pos>=0){user=decoded.slice(0,pos);password=decoded.slice(pos+1);}
-      }
-    }catch(_){}
-    if(user!=='demo'||password!==env.DEMO_ACCESS_PASSWORD) {
-      return new Response('Area riservata - Demo privata',{status:401,headers:{
-        'WWW-Authenticate':'Basic realm="UNICA CRM - Demo", charset="UTF-8"',
-        'Cache-Control':'no-store'
-      }});
-    }
-    return app.fetch(request,env,ctx);
-  }
+  fetch: (request: Request, env: Bindings, ctx: ExecutionContext) =>
+    app.fetch(request, env, ctx),
 }
 
 /* ============================================
