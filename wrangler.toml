@@ -1,6 +1,6 @@
 # Installazione indipendente di UNICA CRM per presentazione.
 # NON collegare risorse del precedente account aziendale.
-name = "crm-demo-personale"
+name = "crm-su-misura"
 main = "./index.tsx"
 compatibility_date = "2026-11-10"
 compatibility_flags = ["nodejs_compat"]
