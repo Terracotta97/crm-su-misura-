@@ -1,0 +1,27 @@
+name: Verifica build CRM Cloudflare
+on:
+  push:
+    branches:
+      - cloudflare-crm-completo
+  workflow_dispatch:
+jobs:
+  valida:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Recupera il codice
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - name: Installa le dipendenze
+        run: npm ci
+      - name: Prepara frontend originale
+        run: npm run build
+      - name: Verifica asset
+        run: test -f public/static/app.js && test -f public/static/style.css
+      - name: Compila Cloudflare Worker senza pubblicare
+        run: npx wrangler deploy --dry-run --outdir .wrangler-check
