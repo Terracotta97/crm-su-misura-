@@ -429,10 +429,7 @@ const initialSchemaIndexes: string[] = [
   "CREATE INDEX IF NOT EXISTS idx_rilievi_tecnico ON rilievi(tecnico_id)",
   "CREATE INDEX IF NOT EXISTS idx_rilievo_dettagli_rilievo ON rilievo_dettagli(rilievo_id)",
   "CREATE INDEX IF NOT EXISTS idx_presenze_user ON presenze(user_id)",
-  "CREATE INDEX IF NOT EXISTS idx_presenze_data ON presenze(data)",
-  "CREATE INDEX IF NOT EXISTS idx_meta_leads_status ON meta_leads(status)",
-  "CREATE INDEX IF NOT EXISTS idx_meta_leads_customer ON meta_leads(customer_id)",
-  "CREATE INDEX IF NOT EXISTS idx_meta_conversions_customer ON meta_conversions(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_presenze_data ON presenze(data)",  "CREATE INDEX IF NOT EXISTS idx_meta_conversions_customer ON meta_conversions(customer_id)",
   "CREATE INDEX IF NOT EXISTS idx_meta_conversions_sale ON meta_conversions(sale_id)"
 ];
 
