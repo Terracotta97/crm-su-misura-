@@ -149,503 +149,314 @@ async function deletePreventivo(db: D1Database, preventivoId: number | string) {
   await db.prepare(`DELETE FROM preventivi WHERE id = ?`).bind(preventivoId).run()
 }
 
+// Schema CRM: tabelle, colonne aggiuntive e indici dalla versione originale.
+// I batch D1 evitano di superare il limite di chiamate per richiesta del piano Free.
+const initialSchemaTables: string[] = [
+  "CREATE TABLE IF NOT EXISTS users (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      username TEXT UNIQUE NOT NULL,\n      password TEXT NOT NULL,\n      role TEXT NOT NULL CHECK (role IN ('admin','venditore')),\n      nome_completo TEXT NOT NULL,\n      email TEXT,\n      telefono TEXT,\n      attivo INTEGER DEFAULT 1,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    )",
+  "CREATE TABLE IF NOT EXISTS customers (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      nome TEXT NOT NULL,\n      cognome TEXT NOT NULL,\n      email TEXT,\n      telefono TEXT,\n      azienda TEXT,\n      indirizzo TEXT,\n      citta TEXT,\n      cap TEXT,\n      provincia TEXT,\n      note TEXT,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    )",
+  "CREATE TABLE IF NOT EXISTS products (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      codice TEXT UNIQUE NOT NULL,\n      nome TEXT NOT NULL,\n      descrizione TEXT,\n      categoria TEXT,\n      prezzo_base DECIMAL(10,2) NOT NULL DEFAULT 0.00,\n      prezzo_vendita DECIMAL(10,2) NOT NULL DEFAULT 0.00,\n      disponibile INTEGER DEFAULT 1,\n      giacenza INTEGER DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    )",
+  "CREATE TABLE IF NOT EXISTS sales (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      numero_ordine TEXT UNIQUE NOT NULL,\n      customer_id INTEGER NOT NULL,\n      user_id INTEGER NOT NULL,\n      data_vendita DATE NOT NULL,\n      totale DECIMAL(10,2) NOT NULL DEFAULT 0.00,\n      stato TEXT NOT NULL DEFAULT 'confermata',\n      note TEXT,\n      appointment_id INTEGER,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS sale_items (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      sale_id INTEGER,\n      product_id INTEGER,\n      quantita INTEGER NOT NULL DEFAULT 1,\n      prezzo_unitario DECIMAL(10,2) NOT NULL,\n      subtotale DECIMAL(10,2) NOT NULL,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,\n      FOREIGN KEY (product_id) REFERENCES products(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS activities (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      tipo TEXT NOT NULL,\n      descrizione TEXT NOT NULL,\n      customer_id INTEGER,\n      user_id INTEGER NOT NULL,\n      data_attivita DATETIME DEFAULT CURRENT_TIMESTAMP,\n      metadata TEXT,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS appointments (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      customer_id INTEGER NOT NULL,\n      user_id INTEGER NOT NULL,\n      titolo TEXT NOT NULL,\n      descrizione TEXT,\n      data_ora DATETIME NOT NULL,\n      durata_min INTEGER DEFAULT 60,\n      stato TEXT DEFAULT 'programmato',\n      interno INTEGER DEFAULT 1,\n      contratto_chiuso INTEGER DEFAULT 0,\n      importo DECIMAL(20,2) DEFAULT 0.00,\n      prodotti_venduti TEXT,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS attachments (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      customer_id INTEGER,\n      appointment_id INTEGER,\n      preventivo_id INTEGER,\n      tipo_allegato TEXT DEFAULT 'generico',\n      filename TEXT NOT NULL,\n      mime_type TEXT,\n      size INTEGER,\n      data_base64 TEXT NOT NULL,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (appointment_id) REFERENCES appointments(id),\n      FOREIGN KEY (preventivo_id) REFERENCES preventivi(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS orders (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      sale_id INTEGER NOT NULL,\n      customer_id INTEGER NOT NULL,\n      user_id INTEGER,\n      stato TEXT NOT NULL DEFAULT 'in_preparazione',\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (sale_id) REFERENCES sales(id),\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS order_items (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      order_id INTEGER NOT NULL,\n      product_type TEXT NOT NULL,\n      selezionato INTEGER DEFAULT 0,\n      costo DECIMAL(20,2) DEFAULT 0.00,\n      data_prevista DATE,\n      data_arrivo DATE,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE\n    )",
+  "CREATE TABLE IF NOT EXISTS montaggi (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      order_id INTEGER,\n      customer_id INTEGER NOT NULL,\n      product_type TEXT NOT NULL,\n      data_montaggio DATE,\n      ora_montaggio TIME,\n      montatori TEXT,\n      stato TEXT DEFAULT 'da_programmare',\n      note TEXT,\n      priorita TEXT DEFAULT 'normale',\n      da_ritornare INTEGER DEFAULT 0,\n      manutenzioni INTEGER DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (order_id) REFERENCES orders(id),\n      FOREIGN KEY (customer_id) REFERENCES customers(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS pratiche_enea (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      montaggio_id INTEGER NOT NULL,\n      customer_id INTEGER NOT NULL,\n      order_id INTEGER NOT NULL,\n      data_completamento_montaggio DATE NOT NULL,\n      stato TEXT DEFAULT 'da_fare',\n      note TEXT,\n      data_completamento DATE,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      archiviato INTEGER DEFAULT 0,\n      FOREIGN KEY (montaggio_id) REFERENCES montaggi(id),\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (order_id) REFERENCES orders(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS preventivi (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      customer_id INTEGER NOT NULL,\n      richiedente_id INTEGER NOT NULL,\n      stato TEXT NOT NULL DEFAULT 'in_attesa',\n      priorita TEXT DEFAULT 'entro_96h' CHECK (priorita IN ('in_giornata', 'entro_48h', 'entro_72h', 'entro_96h')),\n      note_richiesta TEXT,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (richiedente_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS preventivi_notifiche (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      preventivo_id INTEGER NOT NULL,\n      user_id INTEGER NOT NULL,\n      tipo TEXT NOT NULL,\n      letto INTEGER DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (preventivo_id) REFERENCES preventivi(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS promemoria (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      customer_id INTEGER NOT NULL,\n      user_id INTEGER NOT NULL,\n      data_promemoria DATE NOT NULL,\n      motivo TEXT,\n      note TEXT,\n      stato TEXT DEFAULT 'attivo',\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (user_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS rilievi (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      customer_id INTEGER NOT NULL,\n      stato TEXT NOT NULL DEFAULT 'da programmare',\n      data_rilievo DATE,\n      ora_rilievo TIME,\n      tecnico_id INTEGER,\n      note TEXT,\n\t  tempo_stimato_montaggio TEXT,\n      allegato BLOB,\n      allegato_nome TEXT,\n      allegato_tipo TEXT,\n      data_completamento DATETIME,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,\n      FOREIGN KEY (tecnico_id) REFERENCES users(id)\n    )",
+  "CREATE TABLE IF NOT EXISTS rilievo_dettagli (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      rilievo_id INTEGER NOT NULL UNIQUE,\n      anagrafica_json TEXT,\n      finestre_json TEXT,\n      elementi_tecnici_json TEXT,\n      commenti TEXT,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (rilievo_id) REFERENCES rilievi(id) ON DELETE CASCADE\n    )",
+  "CREATE TABLE IF NOT EXISTS presenze (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      user_id INTEGER NOT NULL,\n      data DATE NOT NULL,\n      ora_entrata TIME,\n      ora_uscita TIME,\n      pausa_pranzo INTEGER DEFAULT 0,\n      tipo TEXT DEFAULT 'lavoro',\n      note TEXT,\n      pc_fingerprint TEXT,\n      ip_address TEXT,\n      confermata INTEGER DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (user_id) REFERENCES users(id),\n      UNIQUE(user_id, data)\n    )",
+  "CREATE TABLE IF NOT EXISTS meta_conversions (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      event_name TEXT NOT NULL,\n      event_time INTEGER NOT NULL,\n      user_data TEXT,\n      custom_data TEXT,\n      event_id TEXT UNIQUE,\n      customer_id INTEGER,\n      sale_id INTEGER,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY (customer_id) REFERENCES customers(id),\n      FOREIGN KEY (sale_id) REFERENCES sales(id)\n    )"
+];
+const additionalSchemaColumns: [string,string,string][] = [
+  [
+    "users",
+    "scopes",
+    "TEXT"
+  ],
+  [
+    "users",
+    "pc_fingerprint",
+    "TEXT"
+  ],
+  [
+    "users",
+    "ultimo_accesso",
+    "DATETIME"
+  ],
+  [
+    "customers",
+    "assegnato_a",
+    "INTEGER"
+  ],
+  [
+    "customers",
+    "stato",
+    "TEXT DEFAULT 'nuovo'"
+  ],
+  [
+    "customers",
+    "data_richiamo",
+    "DATE"
+  ],
+  [
+    "customers",
+    "venditore_originale",
+    "INTEGER"
+  ],
+  [
+    "customers",
+    "codice_fiscale",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "partita_iva",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "codice_sdi",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "cantiere_diverso",
+    "INTEGER DEFAULT 0"
+  ],
+  [
+    "customers",
+    "cantiere_indirizzo",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "cantiere_citta",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "cantiere_cap",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "cantiere_provincia",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "numero_contratto",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "data_firma_contratto",
+    "DATE"
+  ],
+  [
+    "customers",
+    "venditore_firma",
+    "TEXT"
+  ],
+  [
+    "customers",
+    "importo_contratto",
+    "DECIMAL(10,2)"
+  ],
+  [
+    "customers",
+    "prodotti_venduti",
+    "TEXT"
+  ],
+  [
+    "products",
+    "fornitore",
+    "TEXT"
+  ],
+  [
+    "products",
+    "quantita",
+    "INTEGER DEFAULT 1"
+  ],
+  [
+    "sales",
+    "appointment_id",
+    "INTEGER"
+  ],
+  [
+    "sales",
+    "numero_contratto",
+    "TEXT"
+  ],
+  [
+    "appointments",
+    "prodotti_venduti",
+    "TEXT"
+  ],
+  [
+    "appointments",
+    "esito_vendita",
+    "TEXT"
+  ],
+  [
+    "appointments",
+    "stato_recall",
+    "TEXT"
+  ],
+  [
+    "appointments",
+    "note_recall",
+    "TEXT"
+  ],
+  [
+    "attachments",
+    "preventivo_id",
+    "INTEGER"
+  ],
+  [
+    "attachments",
+    "tipo_allegato",
+    "TEXT DEFAULT 'generico'"
+  ],
+  [
+    "orders",
+    "user_id",
+    "INTEGER"
+  ],
+  [
+    "order_items",
+    "selezionato",
+    "INTEGER DEFAULT 0"
+  ],
+  [
+    "order_items",
+    "product_type",
+    "TEXT DEFAULT 'infissi'"
+  ],
+  [
+    "order_items",
+    "fornitore",
+    "TEXT"
+  ],
+  [
+    "order_items",
+    "quantita",
+    "INTEGER DEFAULT 1"
+  ],
+  [
+    "order_items",
+    "costo",
+    "DECIMAL(20,2) DEFAULT 0.00"
+  ],
+  [
+    "order_items",
+    "data_prevista",
+    "DATE"
+  ],
+  [
+    "order_items",
+    "data_arrivo",
+    "DATE"
+  ],
+  [
+    "preventivi",
+    "priorita",
+    "TEXT DEFAULT 'entro_96h' CHECK (priorita IN ('in_giornata', 'entro_48h', 'entro_72h', 'entro_96h'))"
+  ],
+  [
+    "preventivi",
+    "citta",
+    "TEXT"
+  ],
+  [
+    "preventivi",
+    "provincia",
+    "TEXT"
+  ],
+  [
+    "preventivi",
+    "note_preventivista",
+    "TEXT"
+  ],
+  [
+    "preventivi",
+    "assegnato_a",
+    "INTEGER"
+  ],
+  [
+    "rilievi",
+    "tempo_stimato_montaggio",
+    "TEXT"
+  ],
+  [
+    "rilievi",
+    "prodotti_quantita",
+    "TEXT"
+  ]
+];
+const initialSchemaIndexes: string[] = [
+  "CREATE INDEX IF NOT EXISTS idx_pratiche_enea_stato \n    ON pratiche_enea(stato)",
+  "CREATE INDEX IF NOT EXISTS idx_pratiche_enea_customer \n    ON pratiche_enea(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_customers_assegnato ON customers(assegnato_a)",
+  "CREATE INDEX IF NOT EXISTS idx_customers_stato ON customers(stato)",
+  "CREATE INDEX IF NOT EXISTS idx_customers_richiamo ON customers(data_richiamo)",
+  "CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_orders_sale ON orders(sale_id)",
+  "CREATE INDEX IF NOT EXISTS idx_appt_user ON appointments(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_appt_datetime ON appointments(data_ora)",
+  "CREATE INDEX IF NOT EXISTS idx_montaggi_data ON montaggi(data_montaggio)",
+  "CREATE INDEX IF NOT EXISTS idx_montaggi_stato ON montaggi(stato)",
+  "CREATE INDEX IF NOT EXISTS idx_promemoria_data ON promemoria(data_promemoria)",
+  "CREATE INDEX IF NOT EXISTS idx_promemoria_user ON promemoria(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(data_attivita)",
+  "CREATE INDEX IF NOT EXISTS idx_appt_customer ON appointments(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_richiedente ON preventivi(richiedente_id)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_stato ON preventivi(stato)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_customer ON preventivi(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_notifiche_user ON preventivi_notifiche(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_created_id ON preventivi(created_at, id)",
+  "CREATE INDEX IF NOT EXISTS idx_preventivi_stato_created ON preventivi(stato, created_at)",
+  "CREATE INDEX IF NOT EXISTS idx_attachments_preventivo_tipo ON attachments(preventivo_id, tipo_allegato)",
+  "CREATE INDEX IF NOT EXISTS idx_rilievi_customer ON rilievi(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_rilievi_stato ON rilievi(stato)",
+  "CREATE INDEX IF NOT EXISTS idx_rilievi_data ON rilievi(data_rilievo)",
+  "CREATE INDEX IF NOT EXISTS idx_rilievi_tecnico ON rilievi(tecnico_id)",
+  "CREATE INDEX IF NOT EXISTS idx_rilievo_dettagli_rilievo ON rilievo_dettagli(rilievo_id)",
+  "CREATE INDEX IF NOT EXISTS idx_presenze_user ON presenze(user_id)",
+  "CREATE INDEX IF NOT EXISTS idx_presenze_data ON presenze(data)",  "CREATE INDEX IF NOT EXISTS idx_meta_conversions_customer ON meta_conversions(customer_id)",
+  "CREATE INDEX IF NOT EXISTS idx_meta_conversions_sale ON meta_conversions(sale_id)"
+];
+
 async function initializeDatabase(db: D1Database) {
-  await db.prepare('PRAGMA foreign_keys = ON').run()
+  // Il marker viene scritto solo dopo aver completato TUTTO lo schema.
+  const done = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='__unica_schema_ready'").first();
+  if (done) return;
 
-  /* USERS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin','venditore')),
-      nome_completo TEXT NOT NULL,
-      email TEXT,
-      telefono TEXT,
-      attivo INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run()
+  // CREATE TABLE IF NOT EXISTS preserva le tabelle esistenti e i loro dati.
+  await db.batch(initialSchemaTables.map(sql => db.prepare(sql)));
 
-await addColumnIfMissing(db, 'users', 'scopes', 'TEXT'); // JSON con permessi
-await addColumnIfMissing(db, 'users', 'pc_fingerprint', 'TEXT'); // Device lock
-await addColumnIfMissing(db, 'users', 'ultimo_accesso', 'DATETIME'); // Tracking inattività
+  const tablesWithColumns = Array.from(new Set(additionalSchemaColumns.map(item => item[0])));
+  const columnInfo = await db.batch(tablesWithColumns.map(name => db.prepare('PRAGMA table_info("' + name + '")')));
+  const alterations: D1PreparedStatement[] = [];
+  for (let i = 0; i < tablesWithColumns.length; i++) {
+    const table = tablesWithColumns[i];
+    const existing = new Set((columnInfo[i].results || []).map((row: any) => row.name));
+    for (const [specTable, col, definition] of additionalSchemaColumns) {
+      if (specTable === table && !existing.has(col)) {
+        alterations.push(db.prepare('ALTER TABLE "' + table + '" ADD COLUMN "' + col + '" ' + definition));
+      }
+    }
+  }
+  if (alterations.length) await db.batch(alterations);
+  await db.batch(initialSchemaIndexes.map(sql => db.prepare(sql)));
 
-
-
-  /* CUSTOMERS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS customers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT NOT NULL,
-      cognome TEXT NOT NULL,
-      email TEXT,
-      telefono TEXT,
-      azienda TEXT,
-      indirizzo TEXT,
-      citta TEXT,
-      cap TEXT,
-      provincia TEXT,
-      note TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'customers', 'assegnato_a', 'INTEGER')
-  await addColumnIfMissing(db, 'customers', 'stato', "TEXT DEFAULT 'nuovo'")
-  await addColumnIfMissing(db, 'customers', 'data_richiamo', 'DATE')
-  await addColumnIfMissing(db, 'customers', 'venditore_originale', 'INTEGER')
-  await addColumnIfMissing(db, 'customers', 'codice_fiscale', 'TEXT')
-  await addColumnIfMissing(db, 'customers', 'partita_iva', 'TEXT')
-  await addColumnIfMissing(db, 'customers', 'codice_sdi', 'TEXT')
-
-// Campi cantiere diverso
-await addColumnIfMissing(db, 'customers', 'cantiere_diverso', 'INTEGER DEFAULT 0')
-await addColumnIfMissing(db, 'customers', 'cantiere_indirizzo', 'TEXT')
-await addColumnIfMissing(db, 'customers', 'cantiere_citta', 'TEXT')
-await addColumnIfMissing(db, 'customers', 'cantiere_cap', 'TEXT')
-await addColumnIfMissing(db, 'customers', 'cantiere_provincia', 'TEXT')
-  // Campi contratto firmato
-  await addColumnIfMissing(db, 'customers', 'numero_contratto', 'TEXT')
-  await addColumnIfMissing(db, 'customers', 'data_firma_contratto', 'DATE')
-  await addColumnIfMissing(db, 'customers', 'venditore_firma', 'TEXT')
-  await addColumnIfMissing(db, 'customers', 'importo_contratto', 'DECIMAL(10,2)')
-  await addColumnIfMissing(db, 'customers', 'prodotti_venduti', 'TEXT')
-  
-
-
-  /* PRODUCTS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      codice TEXT UNIQUE NOT NULL,
-      nome TEXT NOT NULL,
-      descrizione TEXT,
-      categoria TEXT,
-      prezzo_base DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      prezzo_vendita DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      disponibile INTEGER DEFAULT 1,
-      giacenza INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run()
-
-  // Aggiungi colonne fornitore e quantità ai prodotti
- await addColumnIfMissing(db, 'products', 'fornitore', 'TEXT')
-await addColumnIfMissing(db, 'products', 'quantita', 'INTEGER DEFAULT 1')
-
-  /* SALES */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS sales (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      numero_ordine TEXT UNIQUE NOT NULL,
-      customer_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      data_vendita DATE NOT NULL,
-      totale DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-      stato TEXT NOT NULL DEFAULT 'confermata',
-      note TEXT,
-      appointment_id INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'sales', 'appointment_id', 'INTEGER')
-  await addColumnIfMissing(db, 'sales', 'numero_contratto', 'TEXT')
-
-  /* SALE ITEMS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS sale_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sale_id INTEGER,
-      product_id INTEGER,
-      quantita INTEGER NOT NULL DEFAULT 1,
-      prezzo_unitario DECIMAL(10,2) NOT NULL,
-      subtotale DECIMAL(10,2) NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
-      FOREIGN KEY (product_id) REFERENCES products(id)
-    )
-  `).run()
-
-  /* ACTIVITIES */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS activities (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo TEXT NOT NULL,
-      descrizione TEXT NOT NULL,
-      customer_id INTEGER,
-      user_id INTEGER NOT NULL,
-      data_attivita DATETIME DEFAULT CURRENT_TIMESTAMP,
-      metadata TEXT,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-
-  /* APPOINTMENTS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS appointments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      titolo TEXT NOT NULL,
-      descrizione TEXT,
-      data_ora DATETIME NOT NULL,
-      durata_min INTEGER DEFAULT 60,
-      stato TEXT DEFAULT 'programmato',
-      interno INTEGER DEFAULT 1,
-      contratto_chiuso INTEGER DEFAULT 0,
-      importo DECIMAL(20,2) DEFAULT 0.00,
-      prodotti_venduti TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'appointments', 'prodotti_venduti', 'TEXT')
-  await addColumnIfMissing(db, 'appointments', 'esito_vendita', 'TEXT')  // 'venduto', 'non_venduto', null
-  await addColumnIfMissing(db, 'appointments', 'stato_recall', 'TEXT') // 'primo_contatto', 'non_interessato', 'venduto', 'da_richiamare'
-  await addColumnIfMissing(db, 'appointments', 'note_recall', 'TEXT')
-  
-  /* ATTACHMENTS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS attachments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER,
-      appointment_id INTEGER,
-      preventivo_id INTEGER,
-      tipo_allegato TEXT DEFAULT 'generico',
-      filename TEXT NOT NULL,
-      mime_type TEXT,
-      size INTEGER,
-      data_base64 TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (appointment_id) REFERENCES appointments(id),
-      FOREIGN KEY (preventivo_id) REFERENCES preventivi(id)
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'attachments', 'preventivo_id', 'INTEGER')
-  await addColumnIfMissing(db, 'attachments', 'tipo_allegato', "TEXT DEFAULT 'generico'")
-
-  /* ORDERS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sale_id INTEGER NOT NULL,
-      customer_id INTEGER NOT NULL,
-      user_id INTEGER,
-      stato TEXT NOT NULL DEFAULT 'in_preparazione',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (sale_id) REFERENCES sales(id),
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'orders', 'user_id', 'INTEGER')
-
-  /* ORDER ITEMS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS order_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER NOT NULL,
-      product_type TEXT NOT NULL,
-      selezionato INTEGER DEFAULT 0,
-      costo DECIMAL(20,2) DEFAULT 0.00,
-      data_prevista DATE,
-      data_arrivo DATE,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-    )
-  `).run()
-
-  await addColumnIfMissing(db, 'order_items', 'selezionato', 'INTEGER DEFAULT 0')
-  await addColumnIfMissing(db, 'order_items', 'product_type', "TEXT DEFAULT 'infissi'")
-  await addColumnIfMissing(db, 'order_items', 'fornitore', 'TEXT')
-  await addColumnIfMissing(db, 'order_items', 'quantita', 'INTEGER DEFAULT 1')
-  await addColumnIfMissing(db, 'order_items', 'costo', 'DECIMAL(20,2) DEFAULT 0.00')
-  await addColumnIfMissing(db, 'order_items', 'data_prevista', 'DATE')
-  await addColumnIfMissing(db, 'order_items', 'data_arrivo', 'DATE')
-
-  /* MONTAGGI */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS montaggi (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER NOT NULL,
-      customer_id INTEGER NOT NULL,
-      product_type TEXT NOT NULL,
-      data_montaggio DATE,
-      ora_montaggio TIME,
-      montatori TEXT,
-      stato TEXT DEFAULT 'da_programmare',
-      note TEXT,
-      priorita TEXT DEFAULT 'normale',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (order_id) REFERENCES orders(id),
-      FOREIGN KEY (customer_id) REFERENCES customers(id)
-    )
-  `).run()
-await addColumnIfMissing(db, 'montaggi', 'da_ritornare', 'INTEGER DEFAULT 0')
-await addColumnIfMissing(db, 'montaggi', 'manutenzioni', 'INTEGER DEFAULT 0')
-
-// 🔧 Rendi order_id nullable per permettere montaggi senza ordine (es. rilievi)
-try {
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS montaggi_new (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER,
-      customer_id INTEGER NOT NULL,
-      product_type TEXT NOT NULL,
-      data_montaggio DATE,
-      ora_montaggio TIME,
-      montatori TEXT,
-      stato TEXT DEFAULT 'da_programmare',
-      note TEXT,
-      priorita TEXT DEFAULT 'normale',
-      da_ritornare INTEGER DEFAULT 0,
-      manutenzioni INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (order_id) REFERENCES orders(id),
-      FOREIGN KEY (customer_id) REFERENCES customers(id)
-    )
-  `).run()
-  
-  // Copia i dati esistenti
-  await db.prepare(`
-    INSERT INTO montaggi_new SELECT * FROM montaggi
-  `).run()
-  
-  // Elimina la vecchia tabella
-  await db.prepare(`DROP TABLE montaggi`).run()
-  
-  // Rinomina la nuova tabella
-  await db.prepare(`ALTER TABLE montaggi_new RENAME TO montaggi`).run()
-  
-  console.log('✅ Tabella montaggi aggiornata: order_id ora nullable')
-} catch (e) {
-  console.log('ℹ️ Tabella montaggi già aggiornata o errore:', e)
-}
- 
- /* PRATICHE ENEA */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS pratiche_enea (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      montaggio_id INTEGER NOT NULL,
-      customer_id INTEGER NOT NULL,
-      order_id INTEGER NOT NULL,
-      data_completamento_montaggio DATE NOT NULL,
-      stato TEXT DEFAULT 'da_fare',
-      note TEXT,
-      data_completamento DATE,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      archiviato INTEGER DEFAULT 0,
-      FOREIGN KEY (montaggio_id) REFERENCES montaggi(id),
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (order_id) REFERENCES orders(id)
-    )
-  `).run()
-
-  await db.prepare(` 
-CREATE INDEX IF NOT EXISTS idx_pratiche_enea_stato 
-    ON pratiche_enea(stato)
-  `).run()
-
-  await db.prepare(`
-    CREATE INDEX IF NOT EXISTS idx_pratiche_enea_customer 
-    ON pratiche_enea(customer_id)
-  `).run()
-
-/* PREVENTIVI */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS preventivi (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER NOT NULL,
-      richiedente_id INTEGER NOT NULL,
-      stato TEXT NOT NULL DEFAULT 'in_attesa',
-      priorita TEXT DEFAULT 'entro_96h' CHECK (priorita IN ('in_giornata', 'entro_48h', 'entro_72h', 'entro_96h')),
-      note_richiesta TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (richiedente_id) REFERENCES users(id)
-    )
-  `).run()
-
-  // Aggiungi colonna priorita se mancante (per database esistenti)
-  await addColumnIfMissing(db, 'preventivi', 'priorita', "TEXT DEFAULT 'entro_96h' CHECK (priorita IN ('in_giornata', 'entro_48h', 'entro_72h', 'entro_96h'))")
-  await addColumnIfMissing(db, 'preventivi', 'citta', 'TEXT')
-  await addColumnIfMissing(db, 'preventivi', 'provincia', 'TEXT')
-  await addColumnIfMissing(db, 'preventivi', 'note_preventivista', 'TEXT')
-  await addColumnIfMissing(db, 'preventivi', 'assegnato_a', 'INTEGER')  // Chi ha preso in carico
- 
- /* PREVENTIVI NOTIFICHE */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS preventivi_notifiche (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      preventivo_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      tipo TEXT NOT NULL,
-      letto INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (preventivo_id) REFERENCES preventivi(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-   
-   /* PROMEMORIA - Tabella necessaria per inizializzazione DB */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS promemoria (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER NOT NULL,
-      user_id INTEGER NOT NULL,
-      data_promemoria DATE NOT NULL,
-      motivo TEXT,
-      note TEXT,
-      stato TEXT DEFAULT 'attivo',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-  `).run()
-   
-  /* INDEXES */
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_customers_assegnato ON customers(assegnato_a)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_customers_stato ON customers(stato)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_customers_richiamo ON customers(data_richiamo)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_orders_sale ON orders(sale_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_appt_user ON appointments(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_appt_datetime ON appointments(data_ora)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_montaggi_data ON montaggi(data_montaggio)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_montaggi_stato ON montaggi(stato)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_promemoria_data ON promemoria(data_promemoria)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_promemoria_user ON promemoria(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_activities_date ON activities(data_attivita)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_appt_customer ON appointments(customer_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_richiedente ON preventivi(richiedente_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_stato ON preventivi(stato)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_customer ON preventivi(customer_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_notifiche_user ON preventivi_notifiche(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_created_id ON preventivi(created_at, id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_preventivi_stato_created ON preventivi(stato, created_at)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_attachments_preventivo_tipo ON attachments(preventivo_id, tipo_allegato)').run()
-
-
- /* RILIEVI */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS rilievi (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_id INTEGER NOT NULL,
-      stato TEXT NOT NULL DEFAULT 'da programmare',
-      data_rilievo DATE,
-      ora_rilievo TIME,
-      tecnico_id INTEGER,
-      note TEXT,
-	  tempo_stimato_montaggio TEXT,
-      allegato BLOB,
-      allegato_nome TEXT,
-      allegato_tipo TEXT,
-      data_completamento DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-      FOREIGN KEY (tecnico_id) REFERENCES users(id)
-    )
-  `).run()
-
-  /* INDEXES RILIEVI */
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rilievi_customer ON rilievi(customer_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rilievi_stato ON rilievi(stato)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rilievi_data ON rilievi(data_rilievo)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rilievi_tecnico ON rilievi(tecnico_id)').run()
-  await addColumnIfMissing(db, 'rilievi', 'tempo_stimato_montaggio', 'TEXT')
-  await addColumnIfMissing(db, 'rilievi', 'prodotti_quantita', 'TEXT')  
-  
-  /* RILIEVO DETTAGLI */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS rilievo_dettagli (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      rilievo_id INTEGER NOT NULL UNIQUE,
-      anagrafica_json TEXT,
-      finestre_json TEXT,
-      elementi_tecnici_json TEXT,
-      commenti TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (rilievo_id) REFERENCES rilievi(id) ON DELETE CASCADE
-    )
-  `).run()
-  
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_rilievo_dettagli_rilievo ON rilievo_dettagli(rilievo_id)').run()
-  /* PRESENZE */
-  
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS presenze (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      data DATE NOT NULL,
-      ora_entrata TIME,
-      ora_uscita TIME,
-      pausa_pranzo INTEGER DEFAULT 0,
-      tipo TEXT DEFAULT 'lavoro',
-      note TEXT,
-      pc_fingerprint TEXT,
-      ip_address TEXT,
-      confermata INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      UNIQUE(user_id, data)
-    )
-  `).run()
-  
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_presenze_user ON presenze(user_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_presenze_data ON presenze(data)').run()
-  
-  
-  /* META CONVERSIONS */
-  await db.prepare(`
-    CREATE TABLE IF NOT EXISTS meta_conversions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      event_name TEXT NOT NULL,
-      event_time INTEGER NOT NULL,
-      user_data TEXT,
-      custom_data TEXT,
-      event_id TEXT UNIQUE,
-      customer_id INTEGER,
-      sale_id INTEGER,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id),
-      FOREIGN KEY (sale_id) REFERENCES sales(id)
-    )
-  `).run()
-
-  /* INDEXES META */
-  // await db.prepare('CREATE INDEX IF NOT EXISTS idx_meta_leads_status ON meta_leads(status)').run()
-  // await db.prepare('CREATE INDEX IF NOT EXISTS idx_meta_leads_customer ON meta_leads(customer_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_meta_conversions_customer ON meta_conversions(customer_id)').run()
-  await db.prepare('CREATE INDEX IF NOT EXISTS idx_meta_conversions_sale ON meta_conversions(sale_id)').run()
-  // Utenti della vecchia azienda non vengono creati nel database personale.
-  // Il primo admin viene creato al login dal segreto di Cloudflare.
-
+  await db.prepare("CREATE TABLE IF NOT EXISTS __unica_schema_ready (version INTEGER NOT NULL DEFAULT 1)").run();
 }
 
 function generateOrderNumber() {

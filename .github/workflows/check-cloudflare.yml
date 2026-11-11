@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - cloudflare-crm-completo
+      - fix-d1-login-500
+      - main
   workflow_dispatch:
 jobs:
   valida:
@@ -25,3 +27,29 @@ jobs:
         run: test -f public/static/app.js && test -f public/static/style.css
       - name: Compila Cloudflare Worker senza pubblicare
         run: npx wrangler deploy --dry-run --outdir .wrangler-check
+      - name: Verifica login e creazione schema D1 con Worker locale
+        shell: bash
+        run: |
+          printf 'DEMO_ACCESS_PASSWORD=%s\n' 'test-login-secret-93856' > .dev.vars
+          npx wrangler dev --local --ip 127.0.0.1 --port 8787 > /tmp/unica-worker.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null -u 'demo:test-login-secret-93856' http://127.0.0.1:8787/; then break; fi
+            sleep 2
+          done
+          HTTP_CODE=$(curl -sS -o /tmp/unica-login.json -w '%{http_code}' \
+            -u 'demo:test-login-secret-93856' \
+            -H 'Content-Type: application/json' \
+            --data '{"username":"admin","password":"test-login-secret-93856"}' \
+            http://127.0.0.1:8787/api/auth/login)
+          echo "HTTP login code: $HTTP_CODE"
+          if [[ "$HTTP_CODE" != "200" ]] || ! grep -q '"success":true' /tmp/unica-login.json; then
+            echo "Local CRM login smoke test failed"
+            echo "Response payload:"
+            cat /tmp/unica-login.json
+            sleep 3
+            echo "Worker logs:"
+            tail -n 100 /tmp/unica-worker.log | sed 's/test-login-secret-93856/[redacted]/g'
+            exit 1
+          fi
