@@ -1,0 +1,74 @@
+'use strict';
+const fs = require('fs');
+const assert = require('assert').strict;
+const {JSDOM,VirtualConsole} = require('jsdom');
+const virtualConsole = new VirtualConsole();
+const scriptErrors = [];
+virtualConsole.on('jsdomError',e=>scriptErrors.push(e));
+const html=fs.readFileSync(__dirname+'/index.html','utf8');
+const dom = new JSDOM(html,{url:'https://global-technology-demo.test/',runScripts:'dangerously',pretendToBeVisual:true,virtualConsole});
+const {document,Event,localStorage}=dom.window;
+dom.window.scrollTo=()=>{};
+dom.window.alert=(msg)=>{throw new Error('Alert inatteso: '+msg);};
+dom.window.confirm=()=>true;
+function click(selector){const el=document.querySelector(selector);assert.ok(el,'Elemento non trovato: '+selector);el.click();return el;}
+function setValue(name,value){const form=document.getElementById('modalForm');const field=form.elements.namedItem(name);assert.ok(field,'Campo non trovato: '+name);field.value=value;field.dispatchEvent(new Event('change',{bubbles:true}));return field;}
+function stored(){const data=JSON.parse(localStorage.getItem('edilia-demo-v1'));assert.ok(data);return data;}
+async function finishForm(){
+  const form=document.getElementById('modalForm');assert.ok(form,'Form non aperto');
+  assert.equal(form.reportValidity(),true,'Il form risulta bloccato dalla validazione HTML');
+  click('#modalForm button[type="submit"]');
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(document.getElementById('modalForm'),null,'Il popup non si è chiuso: possibile salvataggio bloccato');
+}
+(async()=>{
+  assert.match(document.title,/Global Technology/i,'Brand aziendale assente');
+  assert.ok(document.querySelector('.brand-logo img'),'Il logo manca dalla sidebar');
+  click('[data-nav="cantieri"]');
+  const names=[...document.querySelectorAll('.cantieri-row:not(.cantieri-header) .cantieri-name')].map(x=>x.textContent);
+  assert.deepEqual(names,['Condominio Verdi','Ristrutturazione Villa Rossi'],'Cantieri in corso non ordinati per inserimento più recente');
+  assert.match(document.querySelector('.cantieri-header').textContent,/Inserito il/);
+  click('[data-action="add-site"]');
+  setValue('name','Nuovo Cantiere Test');
+  setValue('client','Cliente fittizio');
+  await finishForm();
+  let newSite=stored().sites.find(s=>s.name==='Nuovo Cantiere Test');
+  assert.ok(newSite&&newSite.createdAt,'Data inserimento non salvata');
+  assert.ok(document.querySelector('.cantieri-row:not(.cantieri-header) .cantieri-name').textContent.includes('Nuovo Cantiere Test'),'Nuovo cantiere non primo nell’elenco');
+  click('[data-nav="giornata"]');
+  click('[data-action="add-entry"]');
+  setValue('type','materiale');
+  setValue('description','Materiale demo: cemento');
+  setValue('supplier','Fornitore prova');
+  setValue('qty','3');
+  setValue('rate','50');
+  setValue('amount','150');
+  await finishForm();
+  const material=stored().entries.find(e=>e.description==='Materiale demo: cemento');
+  assert.ok(material,'Spesa materiale non salvata');
+  assert.equal(material.amount,150);
+  assert.match(document.getElementById('content').textContent,/Materiale demo: cemento/,'Spesa non mostrata subito nel registro');
+  click('[data-action="add-entry"]');
+  setValue('type','presenza');
+  setValue('personId','p1');
+  setValue('description','Giornata prova muratura');
+  await finishForm();
+  const presence=stored().entries.find(e=>e.description==='Giornata prova muratura');
+  assert.ok(presence&&presence.personId==='p1','Presenza non salvata');
+  click('[data-action="add-entry"]');
+  setValue('type','pagamento');
+  setValue('personId','p1');
+  setValue('description','Acconto artigiano prova');
+  setValue('payAmount','90');
+  await finishForm();
+  const payment=stored().entries.find(e=>e.description==='Acconto artigiano prova');
+  assert.ok(payment,'Pagamento artigiano non salvato');
+  assert.equal(payment.amount,90);
+  click('[data-nav="contabilita"]');
+  assert.match(document.getElementById('content').textContent,/Costi registrati/);
+  click('[data-nav="documenti"]');
+  assert.match(document.getElementById('content').textContent,/Archivio documentale/);
+  assert.deepEqual(scriptErrors.map(e=>e.message),[],'Errori runtime non previsti');
+  console.log('OK: logo e colori, ordinamento cantieri, creazione cantiere, materiale, presenza, pagamento e navigazione.');
+  dom.window.close();
+})().catch(e=>{console.error(e);process.exitCode=1;dom.window.close();});
