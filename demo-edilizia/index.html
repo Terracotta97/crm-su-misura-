@@ -162,6 +162,7 @@ if(x.type==='presenza'&&!x.personId){alert('Seleziona la persona presente.');ret
 if(!x.description){alert('Inserisci una descrizione.');return;}
 var file=form.querySelector('#f_attachment').files[0];if(file){try{await saveAttachment(x.id,file);x.fileName=file.name;}catch(err){alert('Il browser non è riuscito ad archiviare il documento. La registrazione verrà salvata senza allegato.');}}
 if(e)Object.assign(e,x);else state.entries.push(x);save();siteId=x.siteId;activeDate=x.date;month=x.date.slice(0,7);closeModal();go(x.type==='fattura'?'documenti':'giornata');});
+}
 function updateForm(){var form=document.getElementById('modalForm');if(!form)return;var kind=form.elements.type.value;var per=['presenza','pagamento'].includes(kind);var meas=!['nota','fattura','pagamento'].includes(kind);var d=(id,show)=>document.getElementById(id).classList.toggle('hidden',!show);
 d('entry-person',per);d('entry-attendance',kind==='presenza');d('entry-measure',meas);d('entry-payamount',kind==='pagamento');d('entry-linked',kind==='fattura');d('entry-supplier',['materiale','spesa','noleggio','lavorazione'].includes(kind));d('entry-doc',['materiale','noleggio','spesa','lavorazione','fattura'].includes(kind));
 if(kind==='fattura')form.elements.description.placeholder='Esempio: fattura DDT 145';
