@@ -1,4 +1,4 @@
-# EDILIA — dimostrativo gestionale per l'edilizia
+# Global Technology — dimostrativo gestionale per l'edilizia
 
 **DEMO NON DEFINITIVA — dati completamente inventati.**
 
@@ -14,9 +14,9 @@ La demo è composta da un solo file HTML autonomo, senza bisogno di installazion
 ## Cosa puoi provare
 
 - **Panoramica:** cantieri attivi, valori contrattuali, costi e debiti verso artigiani.
-- **Cantieri:** schede modificabili, avanzamento, valore iniziale e varianti, cantieri conclusi e archivio automatico dopo 12 mesi; i cantieri aperti restano sempre visibili.
+- **Cantieri:** elenco compatto ordinato per data di inserimento (più recenti prima), schede modificabili, avanzamento, valore iniziale e varianti, conclusi e archivio dopo 12 mesi; i cantieri aperti restano sempre visibili.
 - **Calendario per cantiere:** navigazione mensile, apertura di ogni data, programmazione presenze future e conferma delle giornate effettive.
-- **Pulsante ＋ Aggiungi:** artigiani, dipendenti, materiali, spese, noleggi, lavorazioni, note, fatture e pagamenti.
+- **Pulsante ＋ Aggiungi:** artigiani, dipendenti, materiali, spese, noleggi, lavorazioni, note, fatture e pagamenti, con conferma al salvataggio e aggiornamento della giornata.
 - **Artigiani e personale:** modalità di pagamento a giornata, a ore, a misura o a corpo; costo maturato, acconti, saldo da pagare e movimenti su più cantieri.
 - **Contabilità per cantiere:** contratto, varianti, spese per categoria, margine provvisorio e pagamenti; fatture collegate a costi già registrati senza doppio conteggio.
 - **Documenti:** DDT cartacei fotografati, PDF, fatture e ricevute allegabili alle registrazioni.
@@ -40,3 +40,9 @@ La demo è composta da un solo file HTML autonomo, senza bisogno di installazion
 ## Codice originale preservato
 
 Questo progetto è ospitato esclusivamente nel branch \`demo-gestionale-edilizia\`, nella directory \`demo-edilizia/\`. Il branch \`main\` e il gestionale originale **non sono stati modificati**.
+
+## Identità aziendale e verifica
+
+- Logo e palette blu di **Global Technology** (Edilizia, Impianti, Infissi).
+- Campi di inserimento data gestiti nei cantieri nuovi e negli esempi; per vecchie registrazioni prive di data il sistema dichiara il dato mancante senza inventarlo.
+- Test automatico GitHub Actions con DOM simulato per aggiunta cantiere, materiali, presenza e pagamento.
