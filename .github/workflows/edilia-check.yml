@@ -49,5 +49,9 @@ jobs:
           }
           console.log('EDILIA OK: sintassi valida e tutte le sezioni navigabili');
           NODE
+      - name: Test salvataggi reali con browser simulato
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts --prefix demo-edilizia jsdom@26
+          node demo-edilizia/test-demo.cjs
       - name: Controlla i file del dimostrativo
         run: test -s demo-edilizia/index.html && test -s demo-edilizia/README.md
