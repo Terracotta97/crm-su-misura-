@@ -1,0 +1,53 @@
+name: Verifica dimostrativo EDILIA
+on:
+  push:
+    branches:
+      - demo-gestionale-edilizia
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Controlla script e navigazione dimostrativo
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm');
+          const html=fs.readFileSync('demo-edilizia/index.html','utf8');
+          const match=html.match(/<script>([\s\S]*?)<\/script>/);
+          if(!match)throw new Error('Script mancante');
+          fs.writeFileSync('/tmp/edilia-demo.js',match[1]);
+          require('child_process').execFileSync('node',['--check','/tmp/edilia-demo.js'],{stdio:'inherit'});
+          const elements={content:{innerHTML:''},'modal-root':{innerHTML:''}};
+          const events={};
+          const doc={
+            getElementById:id=>elements[id]||(elements[id]={innerHTML:'',classList:{toggle(){}}}),
+            querySelectorAll:()=>[],
+            addEventListener:(type,cb)=>{events[type]=cb}
+          };
+          const context={
+            document:doc,
+            localStorage:{getItem(){return null},setItem(){}},
+            window:{scrollTo(){},indexedDB:null},
+            Intl,Date,Math,Number,String,Array,Object,JSON,Set,Promise,
+            alert(){},confirm(){return true},console,setTimeout,clearTimeout
+          };
+          vm.runInNewContext(match[1],context,{timeout:5000});
+          if(!elements.content.innerHTML.includes('Panoramica aziendale'))throw new Error('Dashboard non caricata');
+          function clickNav(view){events.click({target:{closest:()=>({dataset:{nav:view}})}});}
+          for(const [id,snippet] of [
+            ['cantieri','Cantieri'],
+            ['giornata','Registro giornaliero'],
+            ['artigiani','Artigiani e personale'],
+            ['contabilita','Contabilità cantieri'],
+            ['documenti','Archivio documentale']
+          ]){
+            clickNav(id);
+            if(!elements.content.innerHTML.includes(snippet))throw new Error('Schermata non funzionante: '+id);
+          }
+          console.log('EDILIA OK: sintassi valida e tutte le sezioni navigabili');
+          NODE
+      - name: Controlla i file del dimostrativo
+        run: test -s demo-edilizia/index.html && test -s demo-edilizia/README.md
