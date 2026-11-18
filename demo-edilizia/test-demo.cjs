@@ -68,7 +68,62 @@ async function finishForm(){
   assert.match(document.getElementById('content').textContent,/Costi registrati/);
   click('[data-nav="documenti"]');
   assert.match(document.getElementById('content').textContent,/Archivio documentale/);
+
+  // Leasing e noleggi: creazione, registrazione rata e costo collegato al cantiere
+  click('[data-nav="leasing"]');
+  assert.match(document.getElementById('content').textContent,/Leasing e noleggi/);
+  click('[data-action="add-lease"]');
+  setValue('kind','noleggio');
+  setValue('asset','Piattaforma aerea prova');
+  setValue('supplier','Noleggi Fittizi Srl');
+  setValue('amount','420');
+  await finishForm();
+  const lease=stored().leases.find(x=>x.asset==='Piattaforma aerea prova');
+  assert.ok(lease,'Contratto di noleggio non salvato');
+  const costsBefore=stored().entries.filter(x=>x.leaseId===lease.id).length;
+  assert.equal(costsBefore,0,'Il contratto ha registrato costi non ancora pagati');
+  click('[data-pay-lease="'+lease.id+'"]');
+  setValue('amount','420');
+  await finishForm();
+  const leaseExpenses=stored().entries.filter(x=>x.leaseId===lease.id);
+  assert.equal(leaseExpenses.length,1,'Rata non registrata o duplicata');
+  assert.equal(leaseExpenses[0].amount,420);
+  assert.equal(leaseExpenses[0].type,'noleggio');
+  click('[data-lease-details="'+lease.id+'"]');
+  assert.match(document.getElementById('modal-root').textContent,/Rate registrate/);
+  click('#cancelModal');
+
+  // Artigiani: separazione pagato / da pagare, ricerca nei movimenti
+  click('[data-nav="pagamenti"]');
+  assert.match(document.getElementById('content').textContent,/Pagamenti effettuati/);
+  assert.match(document.getElementById('content').textContent,/Ancora da pagare/);
+  click('[data-payment-filter="pagati"]');
+  assert.match(document.getElementById('content').textContent,/Marco Bianchi/);
+  click('[data-ledger="p1"]');
+  assert.match(document.getElementById('content').textContent,/Acconto artigiano prova/);
+
+  // Bolla/ DDT: creazione, righe materiali, numerazione e anteprima stampabile
+  click('[data-nav="bolle"]');
+  assert.match(document.getElementById('content').textContent,/Bolle \/ DDT/);
+  const ddtCount=stored().ddts.length;
+  click('[data-action="add-ddt"]');
+  setValue('recipient','Cantiere Test Cliente');
+  setValue('destination','Via Test 11, Rimini');
+  setValue('ddt_desc_1','Sacchi di cemento');
+  setValue('ddt_qty_1','12');
+  await finishForm();
+  const data=stored();
+  assert.equal(data.ddts.length,ddtCount+1,'Bolla non salvata');
+  const ddt=data.ddts[data.ddts.length-1];
+  assert.match(ddt.number,/^GT-DDT-\d{4}-\d{4}$/);
+  assert.equal(ddt.items.length,1);
+  assert.equal(ddt.items[0].qty,12);
+  click('[data-view-ddt="'+ddt.id+'"]');
+  assert.match(document.getElementById('ddt-paper').textContent,/Sacchi di cemento/);
+  assert.match(document.getElementById('ddt-paper').textContent,/FAC-SIMILE DIMOSTRATIVO/);
+  click('#cancelDdtPreview');
+
   assert.deepEqual(scriptErrors.map(e=>e.message),[],'Errori runtime non previsti');
-  console.log('OK: logo e colori, ordinamento cantieri, creazione cantiere, materiale, presenza, pagamento e navigazione.');
+  console.log('OK: salvataggio cantieri/materiali, pagamenti artigiani, leasing e rate, DDT numerati con anteprima.');
   dom.window.close();
 })().catch(e=>{console.error(e);process.exitCode=1;dom.window.close();});
