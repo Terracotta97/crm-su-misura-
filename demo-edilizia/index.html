@@ -67,6 +67,55 @@
 .toast{bottom:12px;right:12px;left:12px}
 }
 
+
+/* Gestionale: nuove aree Leasing, Pagamenti e Bolle */
+.subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.pay-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.payment-row{display:grid;grid-template-columns:minmax(160px,1.5fr) 105px 115px 115px auto;gap:13px;align-items:center;padding:14px 9px;border-bottom:1px solid #eaf0f6}
+.payment-row.header{background:#f5f8fd;color:#73899e;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;padding-block:12px}
+.payment-row:last-child{border-bottom:0}
+.lease-row{display:grid;grid-template-columns:minmax(150px,1.35fr) minmax(120px,1fr) 95px 110px 110px auto;gap:13px;align-items:center;padding:14px 8px;border-bottom:1px solid #eaf0f6}
+.lease-row.header{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;color:#73899e;background:#f5f8fd}
+.lease-row:last-child{border-bottom:0}
+.ddt-row{display:grid;grid-template-columns:minmax(125px,1fr) 115px minmax(150px,1.5fr) 100px auto;gap:14px;align-items:center;padding:14px 8px;border-bottom:1px solid #eaf0f6}
+.ddt-row.header{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:800;color:#73899e;background:#f5f8fd}
+.ddt-row:last-child{border-bottom:0}
+.ddt-item-fields{border:1px solid #e4eaf3;border-radius:11px;padding:12px;margin-bottom:9px}
+.ddt-item-fields .row{gap:9px}
+.ddt-item-fields .formgroup{flex:1;margin:0}
+.ddt-item-fields .qty{max-width:95px}
+.ddt-item-fields .unit{max-width:95px}
+.ddt-paper{padding:31px 30px;color:#182d45;background:white}
+.ddt-paper h2{font-size:22px;margin:12px 0}
+.ddt-doc-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:17px;border-bottom:2px solid #1b4b96}
+.ddt-doc-header img{max-width:220px;max-height:100px;object-fit:contain}
+.ddt-doc-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
+.ddt-doc-meta>div{border:1px solid #dfe7f4;padding:13px;border-radius:7px}
+.ddt-doc-label{font-size:10px;text-transform:uppercase;color:#73899e;letter-spacing:.08em;font-weight:750;margin-bottom:5px}
+.ddt-disclaimer{color:#96501b;background:#fff4e3;padding:10px;border-radius:8px;font-weight:750;font-size:11px;margin-top:18px}
+@media(max-width:1100px){.payment-row{grid-template-columns:minmax(145px,1.5fr) 95px 95px auto}.payment-row .payment-amount-total{display:none}.lease-row{grid-template-columns:minmax(140px,1fr) 90px 95px auto}.lease-row .lease-vendor,.lease-row .lease-site{display:none}}
+@media(max-width:760px){
+.pay-summary{grid-template-columns:1fr}
+.payment-row{grid-template-columns:minmax(0,1fr) auto;gap:5px}
+.payment-row.header{display:none}
+.payment-row .payment-earned,.payment-row .payment-paid,.payment-row .payment-amount-total{display:none}
+.lease-row{grid-template-columns:minmax(0,1fr) auto;gap:5px}
+.lease-row.header,.lease-row .lease-vendor,.lease-row .lease-site,.lease-row .lease-amount{display:none}
+.ddt-row{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.ddt-row.header,.ddt-row .ddt-date,.ddt-row .ddt-site{display:none}
+.ddt-doc-meta{grid-template-columns:1fr}
+.ddt-item-fields .row{flex-wrap:wrap}
+.ddt-item-fields .qty,.ddt-item-fields .unit{max-width:none;min-width:42%}
+}
+@media print{
+.app{display:none!important}
+#modal-root{display:block!important}
+#ddt-preview-modal{position:static!important;display:block!important;padding:0!important;background:#fff!important}
+#ddt-preview-dialog{width:100%!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;border:0!important}
+#ddt-preview-dialog .dialog-h,#ddt-preview-dialog .dialog-f{display:none!important}
+#ddt-preview-body{padding:0!important;overflow:visible!important}
+.ddt-paper{padding:0!important}
+}
 </style>
 </head>
 <body>
@@ -78,8 +127,11 @@
     <button data-nav="cantieri"><span class="glyph">▤</span> Cantieri</button>
     <button data-nav="giornata"><span class="glyph">▦</span> Giornale di cantiere</button>
     <button data-nav="artigiani"><span class="glyph">♙</span> Artigiani e dipendenti</button>
+    <button data-nav="pagamenti"><span class="glyph">◎</span> Pagamenti artigiani</button>
     <button data-nav="contabilita"><span class="glyph">€</span> Costi e redditività</button>
-    <button data-nav="documenti"><span class="glyph">▧</span> Documenti e bolle</button>
+    <button data-nav="leasing"><span class="glyph">▰</span> Leasing e noleggi</button>
+    <button data-nav="documenti"><span class="glyph">▧</span> Documenti ricevuti</button>
+    <button data-nav="bolle"><span class="glyph">≡</span> Bolle / DDT da creare</button>
   </nav></div>
   <div class="side-bottom"><strong>GLOBAL TECHNOLOGY · DEMO</strong>Dati inventati · Nessuna fatturazione reale<br>Il prototipo non è il prodotto definitivo.</div>
 </aside>
@@ -93,7 +145,7 @@
 (function(){
 'use strict';
 var STORAGE='edilia-demo-v1';
-var state,view='dashboard',siteId='c1',activeDate=localDate(new Date()),month=activeDate.slice(0,7),siteFilter='attivi',selectedPerson=null,attachmentDB=null;
+var state,view='dashboard',siteId='c1',activeDate=localDate(new Date()),month=activeDate.slice(0,7),siteFilter='attivi',selectedPerson=null,paymentFilter='tutti',leaseFilter='attivi',attachmentDB=null;
 function pad(n){return String(n).padStart(2,'0');}
 function localDate(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 function offset(days){var d=new Date();d.setDate(d.getDate()+days);return localDate(d);}
@@ -124,8 +176,15 @@ entries:[
 {id:'e12',siteId:'c1',date:offset(-3),type:'nota',description:'Confermata consegna prossima partita di cemento',amount:0,docType:'',docNumber:'',fileName:''},
 {id:'e13',siteId:'c3',date:offset(-40),type:'materiale',description:'Materiale finiture',supplier:'Edilforniture Esempio',qty:1,unit:'lotto',rate:3500,amount:3500,docType:'fattura',docNumber:'FT 41',fileName:''},
 {id:'e14',siteId:'c1',date:offset(2),type:'presenza',personId:'p1',description:'Proseguimento muratura',qty:1,unit:'giornata',rate:240,amount:240,attendance:'programmata',docType:'',docNumber:'',fileName:''}
+],
+leases:[
+{id:'l1',kind:'leasing',asset:'Autocarro 3,5 t',supplier:'Finanziaria Esempio',siteId:'c2',start:offset(-145),end:offset(180),frequency:'mensile',amount:450,nextDue:offset(14),status:'attivo',notes:'Mezzo utilizzato per trasporto materiali'},
+{id:'l2',kind:'noleggio',asset:'Ponteggio per facciata',supplier:'Noleggi Esempio',siteId:'c1',start:offset(-63),end:offset(80),frequency:'mensile',amount:750,nextDue:offset(9),status:'attivo',notes:'Noleggio ponteggio per lavori esterni'}
+],
+ddts:[
+{id:'d1',number:'GT-DDT-'+new Date().getFullYear()+'-0001',date:offset(-1),siteId:'c1',recipient:'Famiglia Rossi',destination:'Via della Pace 14, Rimini',reason:'Trasferimento materiale in cantiere',transport:'Trasporto a cura del mittente',notes:'Esempio dimostrativo, non valido per impiego fiscale',items:[{description:'Sacchi cemento 25 kg',qty:25,unit:'sacchi'},{description:'Rete elettrosaldata',qty:4,unit:'pz'}]}
 ]};}
-function load(){try{var s=JSON.parse(localStorage.getItem(STORAGE));if(s&&Array.isArray(s.sites)&&Array.isArray(s.entries)&&Array.isArray(s.people))return s;}catch(e){}return mkSeed();}
+function load(){try{var s=JSON.parse(localStorage.getItem(STORAGE));if(s&&Array.isArray(s.sites)&&Array.isArray(s.entries)&&Array.isArray(s.people)){if(!Array.isArray(s.leases))s.leases=[];if(!Array.isArray(s.ddts))s.ddts=[];return s;}}catch(e){}return mkSeed();}
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){alert('Memoria del browser piena: esporta i dati oppure libera spazio.');}}
 state=load();
 function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -136,7 +195,7 @@ function getSite(id){return state.sites.find(function(s){return s.id===id;});}
 function getPerson(id){return state.people.find(function(p){return p.id===id;});}
 function personName(id){var p=getPerson(id);return p?p.name:'—';}
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
-function costEntry(e){return ['presenza','materiale','noleggio','spesa','lavorazione'].includes(e.type)&&e.attendance!=='programmata';}
+function costEntry(e){return ['presenza','materiale','noleggio','leasing','spesa','lavorazione'].includes(e.type)&&e.attendance!=='programmata';}
 function sum(xs){return xs.reduce(function(a,b){return a+(Number(b)||0);},0);}
 function costs(site){return sum(state.entries.filter(function(e){return e.siteId===site&&costEntry(e);}).map(function(e){return e.amount;}));}
 function paid(site){return sum(state.entries.filter(function(e){return e.siteId===site&&e.type==='pagamento';}).map(function(e){return e.amount;}));}
@@ -145,8 +204,8 @@ function insertionDate(s){return s.createdAt||'';}
 function orderByInsertion(a,b){return (insertionDate(b)||'').localeCompare(insertionDate(a)||'') || a.name.localeCompare(b.name,'it');}
 function totalStatus(s){if(s.status==='in_corso')return 'in_corso';if(!s.end)return 'concluso';var cut=new Date();cut.setMonth(cut.getMonth()-12);return new Date(s.end+'T12:00:00')<cut?'archivio':'concluso';}
 function siteOptions(){return state.sites.map(function(s){return '<option value="'+esc(s.id)+'"'+(s.id===siteId?' selected':'')+'>'+esc(s.name)+'</option>';}).join('');}
-function typeLabel(e){return ({presenza:'Manodopera',materiale:'Materiale',noleggio:'Noleggio',spesa:'Altra spesa',lavorazione:'Lavorazione',pagamento:'Pagamento',fattura:'Fattura collegata',nota:'Nota'})[e.type]||e.type;}
-function entryIcon(e){return ({presenza:'♙',materiale:'▣',noleggio:'▰',spesa:'€',lavorazione:'⚒',pagamento:'↗',fattura:'▧',nota:'✎'})[e.type]||'•';}
+function typeLabel(e){return ({presenza:'Manodopera',materiale:'Materiale',noleggio:'Noleggio',leasing:'Rata leasing',spesa:'Altra spesa',lavorazione:'Lavorazione',pagamento:'Pagamento',fattura:'Fattura collegata',nota:'Nota'})[e.type]||e.type;}
+function entryIcon(e){return ({presenza:'♙',materiale:'▣',noleggio:'▰',leasing:'▰',spesa:'€',lavorazione:'⚒',pagamento:'↗',fattura:'▧',nota:'✎'})[e.type]||'•';}
 function description(e){var v=e.personId?personName(e.personId)+' · ':'';return v+(e.description||typeLabel(e));}
 function header(title,sub,actions){return '<div class="section-head"><div><div class="eyebrow">GLOBAL TECHNOLOGY / DEMO</div><h1>'+title+'</h1><p class="sub">'+sub+'</p></div><div class="actions">'+(actions||'')+'</div></div>';}
 function stat(label,val,hint){return '<div class="card"><div class="label">'+label+'</div><div class="val money">'+val+'</div><div class="hint">'+hint+'</div></div>';}
@@ -199,10 +258,213 @@ function balance(id){var earned=sum(state.entries.filter(function(e){return e.pe
 function artigiani(){var people=state.people.slice().sort(function(a,b){return a.kind===b.kind?0:a.kind==='artigiano'?-1:1;});var rows=people.map(function(p){var b=balance(p.id);return '<div class="panel" style="margin:0;padding:18px"><div class="row"><div style="display:flex;align-items:center;gap:10px"><span class="avatar">'+esc(p.name[0])+'</span><div><div class="strong">'+esc(p.name)+'</div><div class="tiny muted">'+(p.kind==='artigiano'?'Artigiano / Subappalto':'Dipendente')+' · '+esc(p.trade)+'</div></div></div></div><hr class="separator"><div class="row small"><span class="muted">Accordo</span><strong>'+esc(p.mode)+' · '+eur(p.rate)+'</strong></div><div class="row small" style="margin-top:9px"><span class="muted">Lavori maturati</span><strong>'+eur(b.earned)+'</strong></div><div class="row small" style="margin-top:9px"><span class="muted">Già pagato</span><strong>'+eur(b.paid)+'</strong></div><div class="row small" style="margin-top:9px"><span class="muted">Saldo contabile</span><strong style="color:#0c806f">'+eur(b.due)+'</strong></div><div class="site-foot"><button class="btn small" data-ledger="'+esc(p.id)+'">Vedi movimenti →</button>'+(p.kind==='artigiano'?'<button class="btn small" data-pay-person="'+esc(p.id)+'">Registra pagamento</button>':'')+'</div></div>';}).join('');
 var ledger='';if(selectedPerson){var per=getPerson(selectedPerson);if(per){ledger=panel('Movimenti · '+esc(per.name),latestTable(state.entries.filter(function(e){return e.personId===selectedPerson;})), '<button class="btn small" data-action="close-ledger">Chiudi</button>');}}
 return header('Artigiani e personale','Accordi a giornata, ore, m² o a corpo. Saldo di ogni artigiano su tutti i cantieri.','<button class="btn primary" data-action="add-person">＋ Nuovo artigiano o dipendente</button>')+'<div class="person-grid">'+rows+'</div><div style="margin-top:18px">'+ledger+'</div>';}
-function costGroups(site){var a=state.entries.filter(function(e){return (!site||e.siteId===site)&&costEntry(e);});var names=[['presenza','Manodopera'],['materiale','Materiali'],['noleggio','Noleggi'],['spesa','Altre spese'],['lavorazione','Lavorazioni']];return names.map(function(c){return {label:c[1],amount:sum(a.filter(function(e){return e.type===c[0];}).map(function(e){return e.amount;}))};});}
+function costGroups(site){var a=state.entries.filter(function(e){return (!site||e.siteId===site)&&costEntry(e);});var names=[['presenza','Manodopera'],['materiale','Materiali'],['noleggio','Noleggi'],['leasing','Leasing'],['spesa','Altre spese'],['lavorazione','Lavorazioni']];return names.map(function(c){return {label:c[1],amount:sum(a.filter(function(e){return e.type===c[0];}).map(function(e){return e.amount;}))};});}
 function contabilita(){var s=currentSite(),groups=costGroups(siteId),cost=costs(siteId),all=siteContract(s),margin=all-cost;var siteEntries=state.entries.filter(function(e){return e.siteId===siteId;});var bar='<div>'+groups.map(function(g){return '<div class="bar-row"><span>'+g.label+'</span><div class="bar"><span style="width:'+(cost?Math.round(g.amount/cost*100):0)+'%"></span></div><strong class="money" style="text-align:right">'+eur(g.amount)+'</strong></div>';}).join('')+'</div>';return header('Contabilità cantieri','Costi effettivi, spese documentate, acconti e margini provvisori.','<button class="btn primary" data-action="add-entry">＋ Nuova voce</button>')+'<div class="panel"><div class="row" style="flex-wrap:wrap"><div class="strong">Situazione di '+esc(s.name)+'</div>'+siteSwitcher()+'</div></div><div class="cards">'+stat('Contratto iniziale',eur(s.contract),'Valore pattuito')+stat('Varianti',eur(s.variations),'Lavori extra autorizzati')+stat('Costi registrati',eur(cost),'Inclusa manodopera eseguita')+stat('Margine provvisorio',eur(margin),'Non è utile netto definitivo')+'</div><div class="layout2">'+panel('Ripartizione costi',bar)+panel('Controllo economico','<div class="row"><span class="sub">Lavori contrattualizzati</span><b>'+eur(all)+'</b></div><hr class="separator"><div class="row"><span class="sub">Costi già maturati</span><b>'+eur(cost)+'</b></div><hr class="separator"><div class="row"><span class="sub">Margine provvisorio</span><b>'+eur(margin)+'</b></div><hr class="separator"><div class="row"><span class="sub">Pagamenti registrati</span><b>'+eur(paid(siteId))+'</b></div><div class="insight" style="margin-top:15px">DDT e fattura collegata producono un solo costo. Un pagamento riduce il debito, non aggiunge un secondo costo. Mancano ancora SAL, incassi, IVA e riconciliazione reale: saranno nella versione definitiva.</div>')+'</div>'+panel('Registro economico completo',latestTable(siteEntries),'<button class="btn" onclick="window.print()">Stampa riepilogo</button>');}
-function documents(){var docs=state.entries.filter(function(e){return (e.fileName||e.docNumber||e.type==='fattura')&&(e.docType!=='nessuno'||e.fileName||e.type==='fattura');});return header('Documenti e bolle','PDF, fotografie di documenti cartacei e fatture collegati al cantiere.','<button class="btn primary" data-action="add-document">＋ Aggiungi documento</button>')+panel('Archivio documentale','<div class="insight" style="margin-bottom:17px">Nella demo i nuovi file rimangono salvati soltanto in questo browser, se il dispositivo lo consente. Nessun file viene inviato a un server.</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Cantiere</th><th>Documento</th><th>Descrizione</th><th>File</th></tr></thead><tbody>'+docs.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(e){return '<tr><td>'+esc(fmtDate(e.date,true))+'</td><td>'+esc((getSite(e.siteId)||{}).name)+'</td><td>'+esc((e.docType||'Fattura').toUpperCase())+' '+esc(e.docNumber||'')+'</td><td>'+esc(e.description||'')+'</td><td>'+(e.fileName?'<button class="link" data-download="'+esc(e.id)+'">'+esc(e.fileName)+'</button>':'<span class="muted">Nessun file (esempio)</span>')+'</td></tr>';}).join('')+'</tbody></table></div>')+'<div class="layout-equal"><section class="panel"><h2>Bolle cartacee</h2><p class="sub">Fotografa il DDT con il telefono, scegli il cantiere e il giorno. Il documento sarà collegato alla registrazione del materiale.</p></section><section class="panel"><h2>Fatture in PDF</h2><p class="sub">Carica il PDF e, se è relativo a una bolla già registrata, scegli il costo precedente: non verrà conteggiato due volte.</p></section></div>';}
-function render(){var out=({dashboard:dashboard,cantieri:cantieri,giornata:giornata,artigiani:artigiani,contabilita:contabilita,documenti:documents})[view]();document.getElementById('content').innerHTML=out+'<div class="footer">GLOBAL TECHNOLOGY · PROTOTIPO DIMOSTRATIVO, NON SOFTWARE DEFINITIVO. Dati fittizi e salvataggio locale nel browser; nessun backend, login, database condiviso o gestione fiscale certificata.</div>';document.querySelectorAll('[data-nav]').forEach(function(el){el.classList.toggle('active',el.getAttribute('data-nav')===view);});}
+function documents(){var docs=state.entries.filter(function(e){return (e.fileName||e.docNumber||e.type==='fattura')&&(e.docType!=='nessuno'||e.fileName||e.type==='fattura');});return header('Documenti e bolle','PDF, fotografie di documenti cartacei e fatture collegati al cantiere.' ,'<div class="actions"><button class="btn" data-nav="bolle">Crea bolla / DDT →</button><button class="btn primary" data-action="add-document">＋ Allega fattura</button></div>')+panel('Archivio documentale','<div class="insight" style="margin-bottom:17px">Nella demo i nuovi file rimangono salvati soltanto in questo browser, se il dispositivo lo consente. Nessun file viene inviato a un server.</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Data</th><th>Cantiere</th><th>Documento</th><th>Descrizione</th><th>File</th></tr></thead><tbody>'+docs.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(e){return '<tr><td>'+esc(fmtDate(e.date,true))+'</td><td>'+esc((getSite(e.siteId)||{}).name)+'</td><td>'+esc((e.docType||'Fattura').toUpperCase())+' '+esc(e.docNumber||'')+'</td><td>'+esc(e.description||'')+'</td><td>'+(e.fileName?'<button class="link" data-download="'+esc(e.id)+'">'+esc(e.fileName)+'</button>':'<span class="muted">Nessun file (esempio)</span>')+'</td></tr>';}).join('')+'</tbody></table></div>')+'<div class="layout-equal"><section class="panel"><h2>Bolle cartacee</h2><p class="sub">Fotografa il DDT con il telefono, scegli il cantiere e il giorno. Il documento sarà collegato alla registrazione del materiale.</p></section><section class="panel"><h2>Fatture in PDF</h2><p class="sub">Carica il PDF e, se è relativo a una bolla già registrata, scegli il costo precedente: non verrà conteggiato due volte.</p></section></div>';}
+
+/* ===== GLOBAL TECHNOLOGY: PAGAMENTI ARTIGIANI ===== */
+function paymentRowsFor(personId){
+  return state.entries.filter(function(e){return e.personId===personId&&e.type==='pagamento';}).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+}
+function pagamentiArtigiani(){
+  var artisans=state.people.filter(function(p){return p.kind==='artigiano';});
+  var totalEarned=sum(artisans.map(function(p){return balance(p.id).earned;}));
+  var totalPaid=sum(artisans.map(function(p){return balance(p.id).paid;}));
+  var totalDue=totalEarned-totalPaid;
+  var filtered=artisans.filter(function(p){var b=balance(p.id);return paymentFilter==='tutti'||(paymentFilter==='da_saldare'&&b.due>0)||(paymentFilter==='pagati'&&b.paid>0);});
+  var rows=filtered.map(function(p){var b=balance(p.id);return '<div class="payment-row">'+
+    '<div><button class="link strong" data-ledger="'+esc(p.id)+'">'+esc(p.name)+'</button><div class="tiny muted">'+esc(p.trade)+' · '+paymentRowsFor(p.id).length+' pagamenti</div></div>'+
+    '<div class="payment-earned money strong">'+eur(b.earned)+'</div>'+
+    '<div class="payment-paid money">'+eur(b.paid)+'</div>'+
+    '<div class="payment-amount-total money"><span class="pill '+(b.due<=0?'done':'late')+'">'+eur(b.due)+'</span></div>'+
+    '<div class="actions"><button class="btn small" data-ledger="'+esc(p.id)+'">Dettaglio</button><button class="btn primary small" data-pay-person="'+esc(p.id)+'">＋ Pagamento</button></div>'+
+    '</div>';}).join('');
+  var ledger='';
+  if(selectedPerson){
+    var p=getPerson(selectedPerson);
+    if(p){
+      var jobs=state.entries.filter(function(e){return e.personId===p.id&&costEntry(e);});
+      var payments=paymentRowsFor(p.id);
+      ledger='<section class="panel"><div class="panel-head"><h2>Dettaglio · '+esc(p.name)+'</h2><button class="btn small" data-action="close-ledger">Chiudi</button></div>'+
+       '<div class="cards">'+stat('Lavori maturati',eur(balance(p.id).earned),'Presenze e lavorazioni effettive')+stat('Pagamenti effettuati',eur(balance(p.id).paid),''+payments.length+' movimenti registrati')+stat('Ancora da pagare',eur(balance(p.id).due),'Saldo contabile dimostrativo')+'</div>'+
+       '<h3 style="font-size:14px">Pagamenti già effettuati</h3>'+latestTable(payments)+
+       '<h3 style="font-size:14px;margin-top:26px">Lavori da liquidare / maturati</h3>'+latestTable(jobs)+'</section>';
+    }
+  }
+  return header('Pagamenti agli artigiani','Visualizza separatamente lavori maturati, acconti e saldi già versati.','<button class="btn primary" data-action="new-artisan-payment">＋ Registra pagamento</button>')+
+    '<div class="cards">'+stat('Lavori maturati',eur(totalEarned),'Artigiani esterni, non dipendenti')+
+    stat('Pagamenti effettuati',eur(totalPaid),'Versamenti e acconti registrati')+
+    stat('Ancora da pagare',eur(totalDue),'Differenza tra maturato e versato')+
+    stat('Artigiani coinvolti',artisans.length,'Su tutti i cantieri')+'</div>'+
+    '<div class="filterbar">'+[['tutti','Tutti gli artigiani'],['da_saldare','Ancora da saldare'],['pagati','Con pagamenti effettuati']].map(function(a){
+    return '<button class="filter '+(paymentFilter===a[0]?'active':'')+'" data-payment-filter="'+a[0]+'">'+a[1]+'</button>';
+    }).join('')+'</div>'+
+    panel('Situazione per artigiano','<div class="payment-row header"><span>Artigiano / ditta</span><span>Maturato</span><span>Pagato</span><span>Da pagare</span><span>Azioni</span></div>'+(rows||'<div class="empty-state">Nessun artigiano con questo filtro.</div>'))+
+    '<div class="insight" style="margin-bottom:18px">Il saldo indica lavori registrati meno pagamenti. Non sostituisce uno scadenzario di fatture verificato né la contabilità ufficiale.</div>'+ledger;
+}
+
+/* ===== GLOBAL TECHNOLOGY: LEASING E NOLEGGI ===== */
+function leaseExpenses(id){
+  return state.entries.filter(function(e){return e.leaseId===id&&costEntry(e);}).slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+}
+function leasePaid(id){return sum(leaseExpenses(id).map(function(e){return e.amount;}));}
+function advanceDue(date,frequency){var p=(date||localDate(new Date())).split('-');var d=new Date(+p[0],+p[1]-1,+p[2],12);if(frequency==='mensile'){var original=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);var last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(original,last));}else if(frequency==='settimanale')d.setDate(d.getDate()+7);else if(frequency==='giornaliero')d.setDate(d.getDate()+1);else return '';return localDate(d);}
+function leaseKind(k){return k==='leasing'?'Leasing':'Noleggio';}
+function leasingNoleggi(){
+ var all=state.leases;
+ var active=all.filter(function(l){return l.status==='attivo';});
+ var nextDue=active.filter(function(l){return !!l.nextDue;}).sort(function(a,b){return a.nextDue.localeCompare(b.nextDue);});
+ var displayed=all.filter(function(l){return leaseFilter==='tutti'||(leaseFilter==='attivi'?l.status==='attivo':l.status==='chiuso');});
+ var paid=sum(all.map(function(l){return leasePaid(l.id);}));
+ var rows=displayed.map(function(l){var site=getSite(l.siteId);var expenses=leaseExpenses(l.id);return '<div class="lease-row">'+
+ '<div><strong>'+esc(l.asset)+'</strong><div class="tiny muted">'+leaseKind(l.kind)+' · '+(l.status==='attivo'?'Attivo':'Concluso')+'</div></div>'+
+ '<div class="lease-vendor small muted">'+esc(l.supplier||'—')+'</div>'+
+ '<div class="lease-site small muted">'+esc(site?site.name:'Non assegnato')+'</div>'+
+ '<div class="lease-amount money"><b>'+eur(l.amount)+'</b><div class="tiny muted">'+esc(l.frequency)+'</div></div>'+
+ '<div><div class="tiny muted">Prossima scadenza</div><strong class="small">'+(l.status==='attivo'&&l.nextDue?esc(fmtDate(l.nextDue,true)):'—')+'</strong></div>'+
+ '<div class="actions"><button class="btn small" data-lease-details="'+esc(l.id)+'">Storico</button><button class="btn small" data-edit-lease="'+esc(l.id)+'">Modifica</button>'+(l.status==='attivo'?'<button class="btn primary small" data-pay-lease="'+esc(l.id)+'">＋ Registra rata</button>':'')+'</div></div>';}).join('');
+ var upcoming=nextDue.slice(0,6).map(function(l){return '<div class="row" style="margin:13px 0"><div><strong class="small">'+esc(l.asset)+'</strong><div class="tiny muted">'+esc(l.supplier)+' · '+esc(fmtDate(l.nextDue,true))+'</div></div><strong class="money">'+eur(l.amount)+'</strong></div>';}).join('');
+ return header('Leasing e noleggi','Scadenze programmate, mezzi e attrezzature, canoni e rate già registrate.','<button class="btn primary" data-action="add-lease">＋ Nuovo contratto</button>')+
+ '<div class="cards">'+stat('Contratti attivi',active.length,'Leasing e noleggi in essere')+
+ stat('Rate / costi registrati',eur(paid),'Incidono sul costo del cantiere')+
+ stat('Prossime scadenze',nextDue.length,'Scadenze ancora programmate')+
+ stat('Canoni periodici attivi',eur(sum(active.map(function(l){return l.amount;}))),'Totale indicativo, frequenze diverse')+'</div>'+
+ '<div class="filterbar">'+[['attivi','Attivi'],['chiuso','Conclusi'],['tutti','Tutti']].map(function(a){return '<button class="filter '+(leaseFilter===a[0]?'active':'')+'" data-lease-filter="'+a[0]+'">'+a[1]+'</button>';}).join('')+'</div>'+
+ panel('Contratti leasing e noleggio','<div class="lease-row header"><span>Mezzo / attrezzatura</span><span>Fornitore</span><span>Cantiere</span><span>Canone</span><span>Scadenza</span><span>Azioni</span></div>'+(rows||'<div class="empty-state">Nessun contratto in questo elenco.</div>'))+
+ panel('Scadenze da controllare',upcoming||'<p class="sub">Non risultano scadenze attive.</p>')+
+ '<div class="insight">Le scadenze sono promemoria. I costi vengono registrati nel cantiere soltanto quando confermi una rata: nessun addebito automatico e nessun doppio conteggio.</div>';
+}
+function addLease(id){
+ var l=id?state.leases.find(function(x){return x.id===id;}):null;
+ var content=selectField('Tipologia','kind',[['leasing','Leasing'],['noleggio','Noleggio']],l?l.kind:'noleggio')+
+ f('Mezzo o attrezzatura','asset','text',l?l.asset:'','required maxlength="140"')+
+ f('Fornitore / società','supplier','text',l?l.supplier:'','required')+
+ selectField('Cantiere collegato','siteId',siteOpts(),l?l.siteId:siteId)+
+ '<div class="form-row">'+f('Data inizio','start','date',l?l.start:localDate(new Date()),'required')+f('Data fine prevista','end','date',l?l.end:'')+'</div>'+
+ '<div class="form-row">'+selectField('Periodicità','frequency',[['mensile','Mensile'],['settimanale','Settimanale'],['giornaliero','Giornaliera'],['una_tantum','Una tantum']],l?l.frequency:'mensile')+f('Canone / rata (€)','amount','number',l?l.amount:0,'min="0.01" step=".01" required')+'</div>'+
+ '<div class="form-row">'+f('Prossima scadenza','nextDue','date',l?l.nextDue:offset(30))+selectField('Stato','status',[['attivo','Attivo'],['chiuso','Concluso']],l?l.status:'attivo')+'</div>'+
+ '<div class="formgroup"><label for="f_notes">Note</label><textarea class="field wide" id="f_notes" name="notes" rows="3">'+esc(l?l.notes:'')+'</textarea></div>';
+ modal(l?'Modifica contratto':'Nuovo leasing / noleggio',content,function(d){
+ var record={id:l?l.id:uid(),kind:String(d.get('kind')),asset:String(d.get('asset')).trim(),supplier:String(d.get('supplier')).trim(),
+ siteId:String(d.get('siteId')),start:String(d.get('start')),end:String(d.get('end')),frequency:String(d.get('frequency')),
+ amount:Number(d.get('amount')),nextDue:String(d.get('nextDue')),status:String(d.get('status')),notes:String(d.get('notes'))};
+ if(!record.asset||!record.supplier||!(record.amount>0)){alert('Inserisci mezzo, fornitore e canone valido.');return;}
+ if(l)Object.assign(l,record);else state.leases.push(record);
+ save();closeModal();go('leasing');notify('✓ Contratto salvato nella demo');
+ },l?'Salva modifiche':'Salva contratto');
+}
+function leasePaymentModal(id){
+ var l=state.leases.find(function(x){return x.id===id;});if(!l)return;
+ var content='<div class="insight" style="margin-bottom:15px">La rata registrata sarà trattata come costo già sostenuto e apparirà anche nella contabilità del cantiere. Non registrarla di nuovo tra le spese giornaliere.</div>'+
+ f('Attrezzatura / contratto','asset','text',l.asset,'disabled')+
+ f('Data pagamento','date','date',localDate(new Date()),'required')+
+ f('Importo versato (€)','amount','number',l.amount,'min="0.01" step=".01" required')+
+ f('Riferimento documento / nota','notes','text','');
+ modal('Registra rata pagata',content,function(d){
+ var amount=Number(d.get('amount'));if(!Number.isFinite(amount)||amount<=0){alert('Importo non valido.');return;}
+ state.entries.push({id:uid(),leaseId:l.id,siteId:l.siteId,date:String(d.get('date')),type:l.kind==='leasing'?'leasing':'noleggio',
+ description:'Canone '+l.asset+(String(d.get('notes')).trim()?' · '+String(d.get('notes')).trim():''),
+ supplier:l.supplier,amount:amount,qty:1,rate:amount,unit:'rata',docType:'nessuno',docNumber:'',fileName:'',paid:true});
+ if(l.nextDue)l.nextDue=advanceDue(l.nextDue,l.frequency);
+ save();closeModal();go('leasing');notify('✓ Rata registrata nei costi del cantiere');
+ },'Registra pagamento');
+}
+function leaseDetails(id){
+ var l=state.leases.find(function(x){return x.id===id;});if(!l)return;
+ var items=leaseExpenses(id);
+ var body='<p class="sub">Fornitore: '+esc(l.supplier)+' · '+esc((getSite(l.siteId)||{}).name||'—')+'</p>'+
+ '<div class="cards" style="grid-template-columns:repeat(2,1fr);margin-top:15px">'+stat('Canone previsto',eur(l.amount),esc(l.frequency))+
+ stat('Rate registrate',eur(leasePaid(l.id)),items.length+' pagamenti')+'</div>'+
+ '<h3 style="font-size:14px">Storico pagamenti registrati</h3>'+latestTable(items);
+ modal('Storico · '+l.asset,body,function(){closeModal();},'Chiudi');
+}
+
+/* ===== GLOBAL TECHNOLOGY: BOZZE BOLLE / DDT ===== */
+function nextDDTNumber(date){
+ var year=(date||localDate(new Date())).slice(0,4);
+ var used=state.ddts.filter(function(d){return (d.number||'').startsWith('GT-DDT-'+year+'-');}).map(function(d){return Number((d.number||'').split('-').pop())||0;});
+ return 'GT-DDT-'+year+'-'+padFour(Math.max(0,...used)+1);
+}
+function padFour(n){return String(n).padStart(4,'0');}
+function bolleDDT(){
+ var documents=state.ddts.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+ var rows=documents.map(function(d){var site=getSite(d.siteId);return '<div class="ddt-row">'+
+ '<div><strong>'+esc(d.number)+'</strong><div class="tiny muted">'+d.items.length+' righe di materiale</div></div>'+
+ '<div class="ddt-date small">'+esc(fmtDate(d.date,true))+'</div>'+
+ '<div class="ddt-site small">'+esc(site?site.name:'—')+'</div>'+
+ '<div class="small">'+esc(d.recipient||'—')+'</div>'+
+ '<div class="actions"><button class="btn small" data-view-ddt="'+esc(d.id)+'">Anteprima / PDF</button><button class="btn small" data-edit-ddt="'+esc(d.id)+'">Modifica</button></div></div>';}).join('');
+ return header('Bolle / DDT','Compila documenti di trasporto dimostrativi, visualizzali e salvali in PDF tramite stampa.','<button class="btn primary" data-action="add-ddt">＋ Crea una bolla</button>')+
+ '<div class="cards">'+stat('Bolle nella demo',documents.length,'Numerazione progressiva dimostrativa')+
+ stat('Cantieri collegabili',state.sites.length,'Destinazione del materiale')+
+ stat('Ultima bolla',documents.length?esc(documents[0].number):'—','Elenco in ordine di data')+
+ stat('Stampa / PDF','Disponibile','Dal pulsante Anteprima / PDF')+'</div>'+
+ panel('Documenti di trasporto creati','<div class="ddt-row header"><span>Numero DDT</span><span>Data</span><span>Cantiere</span><span>Destinatario</span><span>Azioni</span></div>'+(rows||'<div class="empty-state">Nessuna bolla creata.</div>'))+
+ '<div class="insight"><b>Solo fac-simile:</b> la numerazione e il layout servono a mostrare come funzionerà l’area Bolle. Non emettere questi documenti per trasporti reali: la versione definitiva richiederà intestazione aziendale completa, verifiche formali, storico e gestione documentale sicura.</div>';
+}
+function ddtItemRow(i,it){
+ it=it||{};return '<div class="ddt-item-fields" data-ddt-row="'+i+'"><div class="row">'+
+ '<div class="formgroup"><label>Materiale / descrizione '+i+'</label><input class="field wide" name="ddt_desc_'+i+'" type="text" maxlength="180" value="'+esc(it.description||'')+'" '+(i===1?'required':'')+'></div>'+
+ '<div class="formgroup qty"><label>Quantità</label><input class="field wide" name="ddt_qty_'+i+'" type="number" min="0.01" step=".01" value="'+esc(it.qty||'')+'" '+(i===1?'required':'')+'></div>'+
+ '<div class="formgroup unit"><label>Unità</label><input class="field wide" name="ddt_unit_'+i+'" value="'+esc(it.unit||'pz')+'"></div>'+
+ '</div></div>';
+}
+function ddtEditor(id){
+ var item=id?state.ddts.find(function(x){return x.id===id;}):null;var items=item?item.items:[{description:'',qty:'',unit:'pz'}];
+ var content='<div class="insight" style="margin-bottom:16px">Bolla dimostrativa: mittente Global Technology, senza dati fiscali. La stampa è solo un fac-simile.</div>'+
+ '<div class="form-row">'+selectField('Cantiere','siteId',siteOpts(),item?item.siteId:siteId)+f('Data documento','date','date',item?item.date:localDate(new Date()),'required')+'</div>'+
+ f('Destinatario','recipient','text',item?item.recipient:(currentSite().client||''),'required')+
+ f('Indirizzo di consegna','destination','text',item?item.destination:((currentSite().address||'')+', '+(currentSite().city||'')),'required')+
+ '<div class="form-row">'+f('Causale trasporto','reason','text',item?item.reason:'Trasferimento materiale in cantiere','required')+
+ selectField('Trasporto','transport',[['A cura del mittente','A cura del mittente'],['A cura del destinatario','A cura del destinatario'],['A mezzo vettore','A mezzo vettore']],item?item.transport:'A cura del mittente')+'</div>'+
+ '<h3 style="font-size:14px;margin:17px 0 10px">Materiali trasportati</h3><div id="ddt-items">'+items.map(function(it,i){return ddtItemRow(i+1,it);}).join('')+'</div>'+
+ '<button type="button" class="btn small" id="appendDdtRow">＋ Aggiungi riga materiale</button>'+
+ '<div style="margin-top:15px" class="formgroup"><label for="ddt-notes">Note / riferimento</label><textarea class="field wide" rows="3" id="ddt-notes" name="notes">'+esc(item?item.notes:'')+'</textarea></div>';
+ modal(item?'Modifica bolla '+item.number:'Crea bolla / DDT',content,function(d){
+  var count=document.querySelectorAll('[data-ddt-row]').length;
+  var lines=[];for(var i=1;i<=count;i++){var description=String(d.get('ddt_desc_'+i)||'').trim();var raw=String(d.get('ddt_qty_'+i)||'').trim();var qty=Number(raw);
+    if(!description&&!raw)continue;
+    if(!description||!Number.isFinite(qty)||qty<=0){alert('Completa descrizione e quantità della riga '+i+'.');return;}
+    lines.push({description:description,qty:qty,unit:String(d.get('ddt_unit_'+i)||'pz')});
+  }
+  if(!lines.length){alert('Inserisci almeno un materiale.');return;}
+  var date=String(d.get('date'));var rec={id:item?item.id:uid(),number:item?item.number:nextDDTNumber(date),date:date,
+  siteId:String(d.get('siteId')),recipient:String(d.get('recipient')).trim(),destination:String(d.get('destination')).trim(),
+  reason:String(d.get('reason')).trim(),transport:String(d.get('transport')),notes:String(d.get('notes')||''),items:lines};
+  if(item)Object.assign(item,rec);else state.ddts.push(rec);
+  save();closeModal();go('bolle');notify('✓ Bolla salvata nella demo');
+ },item?'Salva modifiche':'Salva bolla');
+ var button=document.getElementById('appendDdtRow');button.onclick=function(){
+  var target=document.getElementById('ddt-items');var n=target.querySelectorAll('[data-ddt-row]').length+1;
+  target.insertAdjacentHTML('beforeend',ddtItemRow(n));button.scrollIntoView({block:'nearest',behavior:'smooth'});
+ };
+}
+function ddtPreview(id){
+ var d=state.ddts.find(function(x){return x.id===id;});if(!d)return;
+ var site=getSite(d.siteId);
+ var logo=document.querySelector('.brand-logo img');var image=logo?logo.getAttribute('src'):'';
+ var paper='<article class="ddt-paper" id="ddt-paper">'+
+ '<div class="ddt-doc-header"><div><h2>DOCUMENTO DI TRASPORTO</h2><div class="small muted">GLOBAL TECHNOLOGY · EDILIZIA · IMPIANTI · INFISSI</div></div>'+
+ (image?'<img alt="Global Technology" src="'+esc(image)+'">':'')+'</div>'+
+ '<div class="ddt-doc-meta"><div><div class="ddt-doc-label">Mittente (fac-simile)</div><strong>GLOBAL TECHNOLOGY</strong><div class="small muted">Dati fiscali e sede da completare nella versione definitiva</div></div>'+
+ '<div><div class="ddt-doc-label">Documento</div><strong>'+esc(d.number)+'</strong><div class="small">Data: '+esc(fmtDate(d.date,true))+'</div></div>'+
+ '<div><div class="ddt-doc-label">Destinatario</div><strong>'+esc(d.recipient)+'</strong><div class="small">'+esc(site?site.name:'')+'</div></div>'+
+ '<div><div class="ddt-doc-label">Consegna presso</div><strong>'+esc(d.destination)+'</strong></div></div>'+
+ '<p class="small"><b>Causale:</b> '+esc(d.reason)+' &nbsp;·&nbsp; <b>Trasporto:</b> '+esc(d.transport)+'</p>'+
+ '<table class="data-table" style="margin:20px 0"><thead><tr><th>Descrizione bene</th><th>Quantità</th><th>Unità</th></tr></thead><tbody>'+
+ d.items.map(function(i){return '<tr><td>'+esc(i.description)+'</td><td>'+num(i.qty)+'</td><td>'+esc(i.unit)+'</td></tr>';}).join('')+
+ '</tbody></table><p class="small"><b>Note:</b> '+esc(d.notes||'—')+'</p>'+
+ '<div class="ddt-doc-meta" style="margin-top:40px"><div><div class="ddt-doc-label">Firma conducente</div><p style="margin-top:35px">________________________</p></div>'+
+ '<div><div class="ddt-doc-label">Firma destinatario</div><p style="margin-top:35px">________________________</p></div></div>'+
+ '<div class="ddt-disclaimer">FAC-SIMILE DIMOSTRATIVO · NON UTILIZZABILE COME DOCUMENTO DI TRASPORTO UFFICIALE</div></article>';
+ document.getElementById('modal-root').innerHTML='<div class="modal" id="ddt-preview-modal"><div class="dialog" id="ddt-preview-dialog" style="width:min(820px,100%)" role="dialog" aria-modal="true" aria-label="Anteprima bolla"><div class="dialog-h"><div><div class="eyebrow">ANTEPRIMA DDT</div><h2>'+esc(d.number)+'</h2></div><button class="close" id="closeDdtPreview" type="button" aria-label="Chiudi">×</button></div><div class="dialog-b" id="ddt-preview-body">'+paper+'</div><div class="dialog-f"><button class="btn" id="cancelDdtPreview" type="button">Chiudi</button><button class="btn primary" id="printDdt" type="button">Stampa / Salva PDF</button></div></div></div>';
+ document.getElementById('closeDdtPreview').onclick=closeModal;
+ document.getElementById('cancelDdtPreview').onclick=closeModal;
+ document.getElementById('printDdt').onclick=function(){window.print();};
+ document.getElementById('ddt-preview-modal').onclick=function(ev){if(ev.target.id==='ddt-preview-modal')closeModal();};
+}
+
+function render(){var out=({dashboard:dashboard,cantieri:cantieri,giornata:giornata,artigiani:artigiani,pagamenti:pagamentiArtigiani,contabilita:contabilita,leasing:leasingNoleggi,documenti:documents,bolle:bolleDDT})[view]();document.getElementById('content').innerHTML=out+'<div class="footer">GLOBAL TECHNOLOGY · PROTOTIPO DIMOSTRATIVO, NON SOFTWARE DEFINITIVO. Dati fittizi e salvataggio locale nel browser; nessun backend, login, database condiviso o gestione fiscale certificata.</div>';document.querySelectorAll('[data-nav]').forEach(function(el){el.classList.toggle('active',el.getAttribute('data-nav')===view);});}
 function f(label,name,type,value,extras){return '<div class="formgroup"><label for="f_'+name+'">'+label+'</label><input class="field wide" id="f_'+name+'" name="'+name+'" type="'+(type||'text')+'" value="'+esc(value==null?'':value)+'" '+(extras||'')+'></div>';}
 function selectField(label,name,opts,value){return '<div class="formgroup"><label for="f_'+name+'">'+label+'</label><select class="select wide" name="'+name+'" id="f_'+name+'">'+opts.map(function(k){return '<option value="'+esc(k[0])+'" '+(k[0]===value?'selected':'')+'>'+esc(k[1])+'</option>';}).join('')+'</select></div>';}
 function modal(title,body,onSubmit,submit){document.getElementById('modal-root').innerHTML='<div class="modal" id="backdrop"><div class="dialog" role="dialog" aria-modal="true" aria-label="'+esc(title)+'"><div class="dialog-h"><div><div class="eyebrow">GLOBAL TECHNOLOGY · DEMO</div><h2>'+esc(title)+'</h2></div><button class="close" type="button" id="closeModal" aria-label="Chiudi">×</button></div><form id="modalForm"><div class="dialog-b">'+body+'</div><div class="dialog-f"><button class="btn" type="button" id="cancelModal">Annulla</button><button class="btn primary" type="submit">'+(submit||'Salva registrazione')+'</button></div></form></div></div>';document.getElementById('closeModal').onclick=closeModal;document.getElementById('cancelModal').onclick=closeModal;document.getElementById('backdrop').addEventListener('click',function(e){if(e.target.id==='backdrop')closeModal();});document.getElementById('modalForm').onsubmit=async function(e){e.preventDefault();var form=e.currentTarget;var btn=form.querySelector('button[type="submit"]');if(form.dataset.saving==='yes')return;if(!form.reportValidity())return;form.dataset.saving='yes';btn.disabled=true;var previous=btn.textContent;btn.textContent='Salvataggio…';try{await onSubmit(new FormData(form),form);}catch(err){console.error('Errore salvataggio demo:',err);alert('Salvataggio non riuscito: '+(err&&err.message?err.message:'errore imprevisto'));}finally{btn.disabled=false;btn.textContent=previous;form.dataset.saving='no';}};}
@@ -256,8 +518,15 @@ function openDB(){return new Promise(function(resolve,reject){if(!window.indexed
 async function saveAttachment(id,file){var db=await openDB();return new Promise(function(resolve,reject){var t=db.transaction('files','readwrite');t.objectStore('files').put(file,id);t.oncomplete=function(){db.close();resolve();};t.onerror=function(){db.close();reject(t.error);};});}
 async function downloadAttachment(id){var e=state.entries.find(function(x){return x.id===id;});if(!e||!e.fileName)return;try{var db=await openDB();var blob=await new Promise(function(resolve,reject){var t=db.transaction('files','readonly');var req=t.objectStore('files').get(id);req.onsuccess=function(){resolve(req.result);};req.onerror=function(){reject(req.error);};});db.close();if(!blob){alert('Allegato non disponibile in questo browser.');return;}var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=e.fileName;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},3000);}catch(err){alert('Non è possibile leggere il documento da questo browser.');}}
 document.addEventListener('click',function(ev){
-var b=ev.target.closest('[data-nav],[data-action],[data-open-site],[data-site-filter],[data-edit-site],[data-month],[data-day],[data-select-date],[data-ledger],[data-pay-person],[data-confirm-entry],[data-delete-entry],[data-edit-entry],[data-download]');if(!b)return;
+var b=ev.target.closest('[data-nav],[data-action],[data-open-site],[data-site-filter],[data-edit-site],[data-month],[data-day],[data-select-date],[data-ledger],[data-pay-person],[data-confirm-entry],[data-delete-entry],[data-edit-entry],[data-download],[data-payment-filter],[data-lease-filter],[data-lease-details],[data-edit-lease],[data-pay-lease],[data-view-ddt],[data-edit-ddt]');if(!b)return;
 if(b.dataset.nav){go(b.dataset.nav);return;}
+if(b.dataset.paymentFilter){paymentFilter=b.dataset.paymentFilter;render();return;}
+if(b.dataset.leaseFilter){leaseFilter=b.dataset.leaseFilter;render();return;}
+if(b.dataset.leaseDetails){leaseDetails(b.dataset.leaseDetails);return;}
+if(b.dataset.editLease){addLease(b.dataset.editLease);return;}
+if(b.dataset.payLease){leasePaymentModal(b.dataset.payLease);return;}
+if(b.dataset.viewDdt){ddtPreview(b.dataset.viewDdt);return;}
+if(b.dataset.editDdt){ddtEditor(b.dataset.editDdt);return;}
 if(b.dataset.openSite){openSite(b.dataset.openSite);return;}
 if(b.dataset.siteFilter){siteFilter=b.dataset.siteFilter;render();return;}
 if(b.dataset.editSite){addSite(b.dataset.editSite);return;}
@@ -271,7 +540,7 @@ if(b.dataset.deleteEntry){deleteEntry(b.dataset.deleteEntry);return;}
 if(b.dataset.editEntry){addEntry(null,b.dataset.editEntry);return;}
 if(b.dataset.download){downloadAttachment(b.dataset.download);return;}
 var a=b.dataset.action;
-if(a==='add-site')addSite();else if(a==='add-person')addPerson();else if(a==='add-entry')addEntry('presenza');else if(a==='add-document')addEntry('fattura');else if(a==='today'){activeDate=localDate(new Date());month=activeDate.slice(0,7);render();}else if(a==='reset')reset();else if(a==='close-ledger'){selectedPerson=null;render();}
+if(a==='add-site')addSite();else if(a==='add-lease')addLease();else if(a==='add-ddt')ddtEditor();else if(a==='new-artisan-payment')addEntry('pagamento');else if(a==='add-person')addPerson();else if(a==='add-entry')addEntry('presenza');else if(a==='add-document')addEntry('fattura');else if(a==='today'){activeDate=localDate(new Date());month=activeDate.slice(0,7);render();}else if(a==='reset')reset();else if(a==='close-ledger'){selectedPerson=null;render();}
 });
 document.addEventListener('change',function(e){if(e.target.id==='sitePicker'){siteId=e.target.value;render();}else if(e.target.id==='dayPicker'&&e.target.value){activeDate=e.target.value;month=activeDate.slice(0,7);render();}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
